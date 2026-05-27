@@ -51,8 +51,14 @@ async function runOpenAiAnalysis(env, prompt) {
 }
 
 async function runGeminiAnalysis(env, prompt) {
-  const apiKey = process.env.GEMINI_API_KEY || env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY is not set on the local server.");
+  const apiKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    env.GEMINI_API_KEY ||
+    env.GOOGLE_GENERATIVE_AI_API_KEY ||
+    env.GOOGLE_API_KEY;
+  if (!apiKey) throw new Error("Gemini API key is not set on the local server.");
 
   const model = process.env.GEMINI_MODEL || env.GEMINI_MODEL || "gemini-2.5-flash";
   const controller = new AbortController();

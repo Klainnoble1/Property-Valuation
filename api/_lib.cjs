@@ -61,8 +61,8 @@ async function runOpenAiAnalysis(prompt) {
 }
 
 async function runGeminiAnalysis(prompt) {
-  const apiKey = getEnv("GEMINI_API_KEY");
-  if (!apiKey) throw new Error("GEMINI_API_KEY is not set.");
+  const apiKey = getEnv("GEMINI_API_KEY") || getEnv("GOOGLE_GENERATIVE_AI_API_KEY") || getEnv("GOOGLE_API_KEY");
+  if (!apiKey) throw new Error("Gemini API key is not set. Add GEMINI_API_KEY in your deployment environment.");
   const model = getEnv("GEMINI_MODEL") || "gemini-2.5-flash";
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 60000);

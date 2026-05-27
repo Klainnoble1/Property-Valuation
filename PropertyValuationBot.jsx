@@ -367,6 +367,7 @@ function buildBasicAnalysis(address, zillow, analysisError) {
   const price = d.price ?? d.listPrice ?? null;
   const sqft = d.livingArea ?? d.livingAreaValue ?? d.sqft ?? null;
   const mid = zest ?? price ?? null;
+  const analysisMessage = analysisError?.message || "AI analysis service was unavailable.";
 
   return {
     property: {
@@ -421,9 +422,9 @@ function buildBasicAnalysis(address, zillow, analysisError) {
       vsLastSale: null,
       vsMedian: null,
       strengths: zest ? ["Live property estimate returned successfully."] : [],
-      risks: ["Comparable sales and market context were not generated because the AI analysis service was unavailable."],
+      risks: [`Comparable sales and market context were not generated: ${analysisMessage}`],
       highlights: zillow?.zpid ? [`Property reference id: ${zillow.zpid}`] : [],
-      analystNote: "This fallback report confirms the live property data integration. AI analysis runs through the local backend endpoint when an active provider key is configured.",
+      analystNote: `This fallback report confirms the live property data integration. AI analysis could not complete because ${analysisMessage}`,
     },
   };
 }
