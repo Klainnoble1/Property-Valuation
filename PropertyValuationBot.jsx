@@ -804,6 +804,53 @@ function ReportActions({ reportId, onShare, onSave }) {
   );
 }
 
+function ResultsMenu({ active, setActive }) {
+  const tabs = [
+    ["lead", "Lead"],
+    ["deal", "Deal"],
+    ["confidence", "Confidence"],
+    ["actions", "Actions"],
+  ];
+  return (
+    <div className="report-actions" style={{ background:"#13161d", border:"1px solid #303541", borderRadius:14, padding:8, marginBottom:14, display:"grid", gridTemplateColumns:"repeat(4,minmax(0,1fr))", gap:6 }}>
+      {tabs.map(([key, label]) => {
+        const selected = active === key;
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setActive(key)}
+            style={{
+              background:selected ? "linear-gradient(135deg,#c9a84c,#e8c97a)" : "#171b24",
+              border:selected ? "none" : "1px solid #303541",
+              color:selected ? "#0c0e13" : "#d0c8b8",
+              borderRadius:9,
+              padding:"10px 8px",
+              fontFamily:"sans-serif",
+              fontWeight:800,
+              fontSize:12,
+              cursor:"pointer",
+            }}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function PipelinePanel({ value, onChange }) {
+  return (
+    <div className="print-hide" style={{ background:"#13161d", border:"1px solid #303541", borderRadius:12, padding:"14px", marginBottom:14 }}>
+      <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:"#e8c97a", fontFamily:"sans-serif", marginBottom:8 }}>Pipeline Status</div>
+      <select value={value} onChange={(e)=>onChange(e.target.value)} style={miniInput}>
+        {PIPELINE_STATUSES.map((status) => <option key={status}>{status}</option>)}
+      </select>
+    </div>
+  );
+}
+
 function ConfidenceCard({ confidence }) {
   if (!confidence) return null;
   const tone = confidence.score >= 75 ? "green" : confidence.score >= 50 ? "gold" : "red";
@@ -1029,6 +1076,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
   const [lead, setLead] = useState(defaultLead);
   const [deal, setDeal] = useState(defaultDeal);
   const [pipelineStatus, setPipelineStatus] = useState("New Lead");
+  const [activeResultTool, setActiveResultTool] = useState("lead");
   const [lastSavedReportId, setLastSavedReportId] = useState(null);
   const [shareMessage, setShareMessage] = useState("");
   const [monthlySearches, setMonthlySearches] = useState(0);
@@ -1398,15 +1446,16 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
             <RehabSelector value={rehabStyle} onChange={updateRehabStyle} />
             <RehabSummary rehab={H} />
             <PhotoGallery photos={propertyPhotos} />
-            <div className="lead-panel"><LeadCapture lead={lead} setLead={setLead} /></div>
-            <div className="print-hide" style={{ background:"#13161d", border:"1px solid #303541", borderRadius:12, padding:"14px", marginBottom:14 }}>
-              <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:"#e8c97a", fontFamily:"sans-serif", marginBottom:8 }}>Pipeline Status</div>
-              <select value={pipelineStatus} onChange={(e)=>setPipelineStatus(e.target.value)} style={miniInput}>
-                {PIPELINE_STATUSES.map((status) => <option key={status}>{status}</option>)}
-              </select>
-            </div>
-            <ConfidenceCard confidence={R.meta?.compConfidence || compConfidence(R)} />
-            <DealCalculator deal={deal} setDeal={setDeal} report={R} />
+            <ResultsMenu active={activeResultTool} setActive={setActiveResultTool} />
+            {activeResultTool === "lead" && (
+              <>
+                <div className="lead-panel"><LeadCapture lead={lead} setLead={setLead} /></div>
+                <PipelinePanel value={pipelineStatus} onChange={setPipelineStatus} />
+              </>
+            )}
+            {activeResultTool === "deal" && <DealCalculator deal={deal} setDeal={setDeal} report={R} />}
+            {activeResultTool === "confidence" && <ConfidenceCard confidence={R.meta?.compConfidence || compConfidence(R)} />}
+            {activeResultTool === "actions" && <ReportActions reportId={lastSavedReportId} onShare={copyShareLink} onSave={saveCurrentReport} />}
 
             {/* ②  Property Card */}
             <div style={{ background:"#13161d", border:"1px solid #222530", borderRadius:14, padding:"22px 24px", marginBottom:14 }}>
