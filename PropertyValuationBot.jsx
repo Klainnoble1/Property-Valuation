@@ -557,8 +557,7 @@ function ScoreArc({ score }) {
         <text x={cx} y={cy+10} textAnchor="middle" fill="#5a5850" fontSize="9" fontFamily="sans-serif" letterSpacing="1">/100</text>
       </svg>
       <div style={{ fontSize:12, color, fontFamily:"sans-serif", marginTop:-4 }}>{label}</div>
-    </div>,
-    document.body
+    </div>
   );
 }
 
@@ -576,8 +575,7 @@ function ValuationMeter({ value, low, high }) {
         <div style={{ position:"absolute", inset:0, background:"linear-gradient(90deg,#1a2a1a,rgba(201,168,76,.35),#2a1a1a)", borderRadius:6 }}/>
         <div style={{ position:"absolute", top:-4, left:`${pct}%`, transform:"translateX(-50%)", width:16, height:16, borderRadius:"50%", background:"#c9a84c", border:"2px solid #0c0e13", boxShadow:"0 0 10px rgba(201,168,76,.6)", zIndex:2 }}/>
       </div>
-    </div>,
-    document.body
+    </div>
   );
 }
 
@@ -811,7 +809,8 @@ function SettingsModal({ onClose, user, theme, setTheme, onSignOut }) {
 
         {message && <div style={{ marginTop:14, fontSize:11, color:message.includes("saved") ? "#64c878" : "#e07060", fontFamily:"sans-serif", textAlign:"center" }}>{message}</div>}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
