@@ -42,6 +42,8 @@ const email = process.env.DEMO_USER_EMAIL || "demo@propval.local";
 const password = process.env.DEMO_USER_PASSWORD || "Demo123456!";
 const regularEmail = process.env.TEST_USER_EMAIL || "user@propval.local";
 const regularPassword = process.env.TEST_USER_PASSWORD || "User123456!";
+const premiumEmail = process.env.PREMIUM_USER_EMAIL || "premium@propval.local";
+const premiumPassword = process.env.PREMIUM_USER_PASSWORD || "Premium123456!";
 
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
   throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env");
@@ -82,6 +84,12 @@ await ensureUser({
   email: regularEmail,
   password: regularPassword,
   metadata: { plan: "free", seeded: true, role: "user" },
+});
+
+await ensureUser({
+  email: premiumEmail,
+  password: premiumPassword,
+  metadata: { plan: "premium", seeded: true, role: "premium-user" },
 });
 
 const sampleReport = {
@@ -139,3 +147,4 @@ try {
 
 console.log(`Sign in with ${email} / ${password}`);
 console.log(`Regular user: ${regularEmail} / ${regularPassword}`);
+console.log(`Premium user: ${premiumEmail} / ${premiumPassword}`);
