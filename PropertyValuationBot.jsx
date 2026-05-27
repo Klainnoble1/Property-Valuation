@@ -1245,6 +1245,33 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
     }
   }
 
+  async function updateSavedReport(reportId, displayAnalysis, zpid) {
+    if (!supabase || !user?.id || !reportId) return false;
+    const enrichedReport = {
+      ...displayAnalysis,
+      meta: {
+        ...(displayAnalysis.meta || {}),
+        lead,
+        deal,
+        dealMetrics: calculateDeal(deal, displayAnalysis),
+        pipelineStatus,
+        compConfidence: compConfidence(displayAnalysis),
+      },
+    };
+    const { error } = await supabase
+      .from("valuation_reports")
+      .update({
+        zestimate: enrichedReport.zestimate?.value,
+        cma_mid: enrichedReport.valuation?.mid,
+        score: enrichedReport.analysis?.investmentScore,
+        zpid: zpid ? String(zpid) : null,
+        report: enrichedReport,
+      })
+      .eq("id", reportId)
+      .eq("user_id", user.id);
+    return !error;
+  }
+
   async function analyze() {
     if (!query.trim() || loading) return;
     if (monthlySearches >= FREE_SEARCH_LIMIT) {
@@ -1362,6 +1389,8 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
       setBaseResult(baseAnalysis);
       setResult(displayAnalysis);
       saveCachedAnalysis({ address: query, zpid: raw.zpid, report: baseAnalysis, zillowRaw: raw });
+      const updated = await updateSavedReport(lastSavedReportId, displayAnalysis, raw.zpid);
+      if (!updated) saveSearchRecord(displayAnalysis, raw.zpid, raw);
       setShareMessage("AI analysis rerun complete.");
     } catch (err) {
       const fallback = buildBasicAnalysis(query, raw, err);
