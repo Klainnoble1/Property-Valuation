@@ -84,29 +84,6 @@ await ensureUser({
   metadata: { plan: "free", seeded: true, role: "user" },
 });
 
-/*
-try {
-  user = await supabaseFetch("/auth/v1/admin/users", {
-    method: "POST",
-    body: JSON.stringify({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { plan: "free", seeded: true },
-    }),
-  });
-  console.log(`Created demo user: ${email}`);
-} catch (error) {
-  if (error.status !== 422 && !String(error.message).toLowerCase().includes("registered")) {
-    throw error;
-  }
-  const users = await supabaseFetch("/auth/v1/admin/users?page=1&per_page=1000");
-  user = users.users.find((item) => item.email === email);
-  if (!user) throw new Error(`Demo user exists but could not be found: ${email}`);
-  console.log(`Demo user already exists: ${email}`);
-}
-*/
-
 const sampleReport = {
   property: {
     address: "35 Abercrombie Pl",

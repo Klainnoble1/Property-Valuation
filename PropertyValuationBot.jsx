@@ -666,7 +666,7 @@ function SettingsModal({ onClose, user, theme, setTheme, onSignOut }) {
           />
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,minmax(0,1fr))", gap:10, marginBottom:18 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:10, marginBottom:18 }}>
           <MiniStat label="Plan" value={plan} />
           <MiniStat label="Theme" value={theme === "dark" ? "Dark" : "Light"} />
           <MiniStat label="Joined" value={joined} />
@@ -745,7 +745,7 @@ function HistoryPanel({ onClose, onLoad, user }) {
   }
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.65)", zIndex:100, display:"flex", justifyContent:"flex-end" }} onClick={onClose}>
-      <div style={{ width:380, background:"#0d0f14", borderLeft:"1px solid #1e2028", height:"100%", overflowY:"auto", padding:24 }} onClick={e=>e.stopPropagation()}>
+      <div style={{ width:"min(100vw,380px)", background:"#0d0f14", borderLeft:"1px solid #1e2028", height:"100%", overflowY:"auto", padding:24, boxSizing:"border-box" }} onClick={e=>e.stopPropagation()}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
           <div style={{ fontSize:15, color:"#f0e8d8" }}>Search History</div>
           <button onClick={onClose} style={{ background:"none", border:"none", color:"#5a5850", cursor:"pointer", fontSize:18 }}>✕</button>
@@ -900,10 +900,19 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
         @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:.4} }
         @keyframes spin   { to{transform:rotate(360deg)} }
         input::placeholder { color:#2a2820; }
+        @media (max-width: 720px) {
+          .app-header { flex-direction: column; align-items: stretch !important; gap: 14px; }
+          .app-header-actions { flex-wrap: wrap; }
+          .search-row { flex-direction: column; }
+          .search-row input, .search-row button { width: 100%; box-sizing: border-box; }
+          .hero-card-row, .property-title-row { flex-direction: column; align-items: flex-start !important; }
+          .hero-card-row > div { text-align: left !important; }
+          .valuation-amount { font-size: 32px !important; }
+        }
       `}</style>
 
       {/* ── Header ── */}
-      <div style={{ borderBottom:"1px solid #1a1c22", padding:"18px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+      <div className="app-header" style={{ borderBottom:"1px solid #1a1c22", padding:"18px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <div style={{ width:36, height:36, background:"linear-gradient(135deg,#c9a84c,#e8c97a)", borderRadius:9, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, boxShadow:"0 4px 16px rgba(201,168,76,.25)" }}>🏛</div>
           <div>
@@ -911,7 +920,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
             <div style={{ fontSize:9, color:"#5a5850", letterSpacing:"2px", textTransform:"uppercase", fontFamily:"sans-serif" }}>AI Property Valuation SaaS</div>
           </div>
         </div>
-        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+        <div className="app-header-actions" style={{ display:"flex", gap:8, alignItems:"center" }}>
           {/* API key status */}
           <div style={{ display:"flex", alignItems:"center", gap:6, background:"#13161d", border:"1px solid #1e2028", borderRadius:8, padding:"5px 10px" }}>
             <div style={{ width:7, height:7, borderRadius:"50%", background:apiKey?"#64c878":"#e07060", boxShadow:`0 0 6px ${apiKey?"#64c878":"#e07060"}80` }}/>
@@ -933,7 +942,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
         </div>
 
         {/* ── Search bar ── */}
-        <div style={{ display:"flex", gap:10, marginBottom:16 }}>
+        <div className="search-row" style={{ display:"flex", gap:10, marginBottom:16 }}>
           <input
             value={query}
             onChange={e=>setQuery(e.target.value)}
@@ -987,12 +996,12 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
             {/* ①  Valuation Hero */}
             {Z?.value && (
               <div style={{ background:"linear-gradient(135deg,#13161d,#15130a)", border:"1px solid rgba(201,168,76,.3)", borderRadius:16, padding:"24px 26px", marginBottom:14 }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
+                <div className="hero-card-row" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
                   <div>
                     <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:"#c9a84c", fontFamily:"sans-serif", marginBottom:4 }}>
                       AI Valuation Signal
                     </div>
-                    <div style={{ fontSize:40, color:"#e8c97a", lineHeight:1 }}>{fmtK(Z.value)}</div>
+                    <div className="valuation-amount" style={{ fontSize:40, color:"#e8c97a", lineHeight:1 }}>{fmtK(Z.value)}</div>
                     {Z.rentEstimate && (
                       <div style={{ fontSize:13, color:"#7a7060", fontFamily:"sans-serif", marginTop:5 }}>
                         Rental signal: <span style={{ color:"#c9a84c" }}>{fmtK(Z.rentEstimate)}/mo</span>
@@ -1023,7 +1032,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
 
             {/* ②  Property Card */}
             <div style={{ background:"#13161d", border:"1px solid #222530", borderRadius:14, padding:"22px 24px", marginBottom:14 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
+              <div className="property-title-row" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
                 <div>
                   <div style={{ fontSize:17, color:"#f0e8d8", marginBottom:4 }}>{P?.address}</div>
                   <div style={{ fontSize:12, color:"#4a4840", fontFamily:"sans-serif" }}>
@@ -1033,7 +1042,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
                 <Badge tone="gold">{P?.type || "Residential"}</Badge>
               </div>
 
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", background:"#0d0f14", borderRadius:10, overflow:"hidden", border:"1px solid #1a1c22", marginBottom:12 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))", background:"#0d0f14", borderRadius:10, overflow:"hidden", border:"1px solid #1a1c22", marginBottom:12 }}>
                 {[
                   { l:"Beds",      v: P?.beds      ?? "—" },
                   { l:"Baths",     v: P?.baths     ?? "—" },
@@ -1062,7 +1071,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
             {(R.priceHistory?.length > 0 || P?.lastSalePrice) && (
               <div style={{ background:"#13161d", border:"1px solid #222530", borderRadius:14, padding:"22px 24px", marginBottom:14 }}>
                 <SectionLabel>Price & Tax History</SectionLabel>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:R.priceHistory?.length?18:0 }}>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:10, marginBottom:R.priceHistory?.length?18:0 }}>
                   {[
                     { l:"Last Sale",    v:fmtK(P?.lastSalePrice), s:P?.lastSaleDate },
                     { l:"Tax Assessed", v:fmtK(P?.taxAssessedValue), s:"Current assessed" },
@@ -1129,7 +1138,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
 
             {/* ⑥  Valuation Range */}
             <div style={{ background:"linear-gradient(135deg,#13161d,#16140e)", border:"1px solid rgba(201,168,76,.25)", borderRadius:14, padding:"24px 26px", marginBottom:14 }}>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr auto", gap:20, alignItems:"center" }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:20, alignItems:"center" }}>
                 <div>
                   <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:"#c9a84c", fontFamily:"sans-serif", marginBottom:6 }}>CMA Estimated Value</div>
                   <div style={{ fontSize:38, color:"#e8c97a", lineHeight:1.1, marginBottom:4 }}>{fmtK(V?.mid)}</div>
