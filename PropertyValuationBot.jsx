@@ -128,7 +128,11 @@ function imageUrlFromValue(value) {
   if (!value) return null;
   if (typeof value === "string" && /^https?:\/\//i.test(value)) return value;
   if (typeof value !== "object") return null;
-  return value.url || value.href || value.src || value.imgSrc || value.mixedSources?.jpeg?.[0]?.url || value.mixedSources?.webp?.[0]?.url || null;
+  const jpeg = value.mixedSources?.jpeg || [];
+  const webp = value.mixedSources?.webp || [];
+  const largestJpeg = [...jpeg].sort((a, b) => Number(b.width || 0) - Number(a.width || 0))[0]?.url;
+  const largestWebp = [...webp].sort((a, b) => Number(b.width || 0) - Number(a.width || 0))[0]?.url;
+  return value.url || value.href || value.src || value.imgSrc || value.imageUrl || value.photoUrl || largestJpeg || largestWebp || null;
 }
 
 function collectPropertyPhotos(source, limit = 12, seen = new Set()) {
@@ -153,8 +157,8 @@ function collectPropertyPhotos(source, limit = 12, seen = new Set()) {
   }
 
   if (typeof source !== "object") return photos;
-  ["imgSrc", "image", "imageUrl", "photo", "photoUrl", "hiResImageLink", "mediumImageLink", "miniCardPhotos"].forEach((key) => add(source[key]));
-  ["photos", "propertyPhotos", "responsivePhotos", "carouselPhotos", "images", "media", "listingPhotos"].forEach((key) => {
+  ["imgSrc", "image", "imageUrl", "photo", "photoUrl", "hiResImageLink", "desktopWebHdpImageLink", "mediumImageLink"].forEach((key) => add(source[key]));
+  ["photos", "propertyPhotos", "responsivePhotos", "responsivePhotosOriginalRatio", "originalPhotos", "carouselPhotos", "images", "media", "listingPhotos", "miniCardPhotos"].forEach((key) => {
     if (photos.length < limit) photos.push(...collectPropertyPhotos(source[key], limit - photos.length, seen));
   });
   ["property", "propertyDetails", "home", "detail", "summary", "hdpData", "zillowProperty"].forEach((key) => {
@@ -905,11 +909,32 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
   const [showSettings,setShowSettings]= useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
-  function hydratePhotos(raw) {
+  async function fetchBackgroundPhotoPayload({ address, zpid }) {
+    try {
+      if (zpid) return firstProperty(await getJson("/property-details", { zpid }, "Property photos"));
+    } catch {}
+    try {
+      if (address) return firstProperty(await getJson("/property-details-address", { address }, "Property photos"));
+    } catch {}
+    return null;
+  }
+
+  function hydratePhotos(raw, context = {}) {
     setPropertyPhotos([]);
-    if (!raw) return;
     const schedule = window.requestIdleCallback || ((callback) => window.setTimeout(callback, 1));
-    schedule(() => setPropertyPhotos(collectPropertyPhotos(raw)));
+    schedule(async () => {
+      const immediate = collectPropertyPhotos(raw);
+      if (immediate.length) {
+        setPropertyPhotos(immediate);
+        return;
+      }
+      const fresh = await fetchBackgroundPhotoPayload(context);
+      const freshPhotos = collectPropertyPhotos(fresh);
+      if (freshPhotos.length) {
+        setPropertyPhotos(freshPhotos);
+        setZillowRaw((current) => current ? { ...current, detail: { ...(current.detail || {}), ...fresh } } : { zpid: context.zpid || propertyLookupId(fresh), detail: fresh });
+      }
+    });
   }
 
   async function saveSearchRecord(displayAnalysis, zpid, raw = zillowRaw) {
@@ -954,7 +979,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
         setBaseResult(cleanReport);
         setResult(displayAnalysis);
         setZillowRaw(cached.zillowRaw || null);
-        hydratePhotos(cached.zillowRaw || null);
+        hydratePhotos(cached.zillowRaw || null, { address: query, zpid: cached.zpid });
         saveSearchRecord(displayAnalysis, cached.zpid, cached.zillowRaw || null);
         return;
       }
@@ -981,7 +1006,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
       setStep(4);
       setBaseResult(baseAnalysis);
       setResult(displayAnalysis);
-      hydratePhotos(zillow);
+      hydratePhotos(zillow, { address: query, zpid: zillow.zpid });
       saveCachedAnalysis({ address: query, zpid: zillow.zpid, report: baseAnalysis, zillowRaw: zillow });
       saveSearchRecord(displayAnalysis, zillow.zpid, zillow);
 
@@ -1001,12 +1026,12 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
       setRehabStyle(item.report.rehab?.styleKey || DEFAULT_REHAB_KEY);
       const raw = item.zillowRaw || null;
       setZillowRaw(raw);
-      hydratePhotos(raw);
+      hydratePhotos(raw, { address: item.address, zpid: item.zpid });
       if (!raw) {
         fetchCachedAnalysis(item.address).then((cached) => {
           if (cached?.zillowRaw) {
             setZillowRaw(cached.zillowRaw);
-            hydratePhotos(cached.zillowRaw);
+            hydratePhotos(cached.zillowRaw, { address: item.address, zpid: cached.zpid || item.zpid });
           }
         }).catch(() => null);
       }
