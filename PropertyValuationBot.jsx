@@ -796,7 +796,7 @@ function inputStyle(theme) {
   return { ...miniInput, background:t.inputBg, border:`1px solid ${t.inputBorder}`, color:t.text };
 }
 
-function LeadCapture({ lead, setLead, theme }) {
+function LeadCapture({ lead, setLead, theme, onSave }) {
   const update = (key, value) => setLead((current) => ({ ...current, [key]: value }));
   const t = toolTheme(theme);
   const field = inputStyle(theme);
@@ -812,6 +812,9 @@ function LeadCapture({ lead, setLead, theme }) {
         </select>
       </div>
       <input value={lead.motivation} onChange={(e)=>update("motivation", e.target.value)} placeholder="Motivation or notes" style={{ ...field, marginTop:8 }} />
+      <div style={{ display:"flex", justifyContent:"flex-end", marginTop:10 }}>
+        <button type="button" onClick={() => onSave?.("Lead saved.")} style={hdrBtn}>Save lead</button>
+      </div>
     </div>
   );
 }
@@ -925,7 +928,7 @@ function ConfidenceCard({ confidence }) {
   );
 }
 
-function DealCalculator({ deal, setDeal, report, theme }) {
+function DealCalculator({ deal, setDeal, report, theme, onSave }) {
   const update = (key, value) => setDeal((current) => ({ ...current, [key]: value }));
   const metrics = calculateDeal(deal, report);
   const t = toolTheme(theme);
@@ -945,6 +948,9 @@ function DealCalculator({ deal, setDeal, report, theme }) {
         <MiniStat label="Projected Profit" value={fmtK(metrics.profit)} />
         <MiniStat label="ROI" value={metrics.roi == null ? "-" : `${metrics.roi}%`} />
         <MiniStat label="Max Offer" value={fmtK(metrics.maxAllowableOffer)} />
+      </div>
+      <div style={{ display:"flex", justifyContent:"flex-end", marginTop:12 }}>
+        <button type="button" onClick={() => onSave?.("Deal saved.")} style={hdrBtn}>Save deal</button>
       </div>
     </div>
   );
@@ -1370,10 +1376,10 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
     setShareMessage("Share link copied.");
   }
 
-  function saveCurrentReport() {
+  function saveCurrentReport(message = "Report saved.") {
     if (!result) return;
     saveSearchRecord(result, zillowRaw?.zpid || result?.zpid || null, zillowRaw);
-    setShareMessage("Report saved.");
+    setShareMessage(message);
   }
 
   async function rerunAiAnalysis() {
@@ -1572,11 +1578,11 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
             <ResultsMenu active={activeResultTool} setActive={setActiveResultTool} theme={theme} />
             {activeResultTool === "lead" && (
               <>
-                <div className="lead-panel"><LeadCapture lead={lead} setLead={setLead} theme={theme} /></div>
+                <div className="lead-panel"><LeadCapture lead={lead} setLead={setLead} theme={theme} onSave={saveCurrentReport} /></div>
                 <PipelinePanel value={pipelineStatus} onChange={setPipelineStatus} theme={theme} />
               </>
             )}
-            {activeResultTool === "deal" && <DealCalculator deal={deal} setDeal={setDeal} report={R} theme={theme} />}
+            {activeResultTool === "deal" && <DealCalculator deal={deal} setDeal={setDeal} report={R} theme={theme} onSave={saveCurrentReport} />}
             {activeResultTool === "confidence" && <ConfidenceCard confidence={R.meta?.compConfidence || compConfidence(R)} />}
             {activeResultTool === "actions" && <ReportActions reportId={lastSavedReportId} onShare={copyShareLink} onSave={saveCurrentReport} onRerun={rerunAiAnalysis} rerunning={rerunningAnalysis} />}
 
