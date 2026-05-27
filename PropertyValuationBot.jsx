@@ -1,7 +1,125 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { supabase } from "./src/supabaseClient.js";
 import { LeadsPage, DealsPage, ConfidencePage, ActionsPage } from "./src/Pages.jsx";
+
+// ── Toast Notification System ───────────────────────────────────────────────────────────────────────────────
+const TOAST_ICONS = {
+  success: "OK",
+  error:   "!",
+  info:    "i",
+  lead:    "L",
+  deal:    "D",
+};
+
+const TOAST_COLORS = {
+  success: { bg: "#0f2a1c", border: "#10b98155", icon: "#10b981", text: "#d1fae5" },
+  error:   { bg: "#2a0f0f", border: "#ef444455", icon: "#ef4444", text: "#fecaca" },
+  info:    { bg: "#0f1a2a", border: "#3b82f655", icon: "#3b82f6", text: "#dbeafe" },
+  lead:    { bg: "#1a1500", border: "#c9a84c55", icon: "#c9a84c", text: "#fef3c7" },
+  deal:    { bg: "#1a1500", border: "#c9a84c55", icon: "#c9a84c", text: "#fef3c7" },
+};
+
+function ToastItem({ toast, onRemove }) {
+  const [visible, setVisible] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const c = TOAST_COLORS[toast.type] || TOAST_COLORS.success;
+
+  useEffect(() => {
+    // mount → slide in
+    const t1 = setTimeout(() => setVisible(true), 10);
+    // auto-dismiss
+    const t2 = setTimeout(() => {
+      setLeaving(true);
+      setTimeout(() => onRemove(toast.id), 380);
+    }, toast.duration || 3500);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
+  return (
+    <div
+      onClick={() => { setLeaving(true); setTimeout(() => onRemove(toast.id), 380); }}
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 12,
+        padding: "13px 16px",
+        background: c.bg,
+        border: `1px solid ${c.border}`,
+        borderRadius: 12,
+        cursor: "pointer",
+        backdropFilter: "blur(16px)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.35)",
+        minWidth: 280,
+        maxWidth: 360,
+        transform: visible && !leaving ? "translateX(0) scale(1)" : "translateX(110%) scale(0.95)",
+        opacity: visible && !leaving ? 1 : 0,
+        transition: "transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease",
+      }}
+    >
+      {/* Icon badge */}
+      <div style={{
+        width: 28, height: 28, borderRadius: "50%",
+        background: `${c.icon}22`, border: `1px solid ${c.icon}44`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 13, color: c.icon, flexShrink: 0, marginTop: 1,
+      }}>
+        {TOAST_ICONS[toast.type] || "OK"}
+      </div>
+      {/* Text */}
+      <div style={{ flex: 1 }}>
+        {toast.title && (
+          <div style={{ fontSize: 13, fontWeight: 700, color: c.text, fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: 2 }}>
+            {toast.title}
+          </div>
+        )}
+        <div style={{ fontSize: 12, color: c.text, opacity: 0.8, fontFamily: "'Inter', sans-serif", lineHeight: 1.4 }}>
+          {toast.message}
+        </div>
+      </div>
+      {/* Progress bar */}
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, borderRadius: "0 0 12px 12px", overflow: "hidden" }}>
+        <div style={{
+          height: "100%", background: c.icon, width: "100%",
+          animation: `shrink ${(toast.duration || 3500)}ms linear forwards`,
+        }} />
+      </div>
+    </div>
+  );
+}
+
+function useToast() {
+  const [toasts, setToasts] = useState([]);
+  const idRef = useRef(0);
+
+  const toast = useCallback((message, type = "success", title = "", duration = 3500) => {
+    const id = ++idRef.current;
+    setToasts(prev => [...prev, { id, message, type, title, duration }]);
+  }, []);
+
+  const remove = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  const ToastContainer = useCallback(() => createPortal(
+    <div style={{
+      position: "fixed", bottom: 28, right: 28, zIndex: 9999,
+      display: "flex", flexDirection: "column", gap: 10,
+      alignItems: "flex-end",
+      pointerEvents: "none",
+    }}>
+      <style>{`@keyframes shrink { from { width:100% } to { width:0% } }`}</style>
+      {toasts.map(t => (
+        <div key={t.id} style={{ pointerEvents: "all" }}>
+          <ToastItem toast={t} onRemove={remove} />
+        </div>
+      ))}
+    </div>,
+    document.body
+  ), [toasts, remove]);
+
+  return { toast, ToastContainer };
+}
 
 // ── Storage keys ──────────────────────────────────────────────────────────────
 const RK = "propval:rapidapi_key";
@@ -1147,7 +1265,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
   const [activePage, setActivePage] = useState("search");
   const [rerunningAnalysis, setRerunningAnalysis] = useState(false);
   const [lastSavedReportId, setLastSavedReportId] = useState(null);
-  const [shareMessage, setShareMessage] = useState("");
+  const { toast, ToastContainer } = useToast();
   const [monthlySearches, setMonthlySearches] = useState(0);
   const [error,       setError]       = useState(null);
   const [showSettings,setShowSettings]= useState(false);
@@ -1366,20 +1484,20 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
 
   async function copyShareLink() {
     if (!lastSavedReportId) {
-      setShareMessage("Run or load a saved report first.");
+      toast("Run or load a saved report first.", "info");
       return;
     }
     const url = new URL(window.location.href);
     url.searchParams.set("report", lastSavedReportId);
     url.searchParams.delete("address");
     await navigator.clipboard?.writeText(url.toString());
-    setShareMessage("Share link copied.");
+    toast("Share link copied to clipboard!", "success");
   }
 
   function saveCurrentReport(message = "Report saved.") {
     if (!result) return;
     saveSearchRecord(result, zillowRaw?.zpid || result?.zpid || null, zillowRaw);
-    setShareMessage(message);
+    toast(message || "Report saved.", "success");
   }
 
   async function rerunAiAnalysis() {
@@ -1387,7 +1505,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
     const raw = zillowRaw || { zpid: result?.zpid || null, summary: result?.property || null, detail: result?.property || null };
     setRerunningAnalysis(true);
     setError(null);
-    setShareMessage("");
+    // clear any stale toast
     try {
       const analysis = await runOpenAI(query, raw);
       const baseAnalysis = stripRehab(analysis);
@@ -1397,7 +1515,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
       saveCachedAnalysis({ address: query, zpid: raw.zpid, report: baseAnalysis, zillowRaw: raw });
       const updated = await updateSavedReport(lastSavedReportId, displayAnalysis, raw.zpid);
       if (!updated) saveSearchRecord(displayAnalysis, raw.zpid, raw);
-      setShareMessage("AI analysis rerun complete.");
+      toast("AI analysis rerun complete.", "success");
     } catch (err) {
       const fallback = buildBasicAnalysis(query, raw, err);
       setBaseResult(stripRehab(fallback));
@@ -1531,7 +1649,6 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
         {/* ── Results ── */}
         <div className="print-hide" style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:10, marginBottom:14, color:"#c0b8a8", fontFamily:"sans-serif", fontSize:13, fontWeight:700 }}>
           <span>Free plan searches this month: {monthlySearches}/{FREE_SEARCH_LIMIT}</span>
-          {shareMessage && <span style={{ color:"#64c878" }}>{shareMessage}</span>}
         </div>
 
         {R && (
@@ -1578,11 +1695,11 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
             <ResultsMenu active={activeResultTool} setActive={setActiveResultTool} theme={theme} />
             {activeResultTool === "lead" && (
               <>
-                <div className="lead-panel"><LeadCapture lead={lead} setLead={setLead} theme={theme} onSave={saveCurrentReport} /></div>
+                <div className="lead-panel"><LeadCapture lead={lead} setLead={setLead} theme={theme} onSave={() => saveCurrentReport("Lead saved to pipeline.")} /></div>
                 <PipelinePanel value={pipelineStatus} onChange={setPipelineStatus} theme={theme} />
               </>
             )}
-            {activeResultTool === "deal" && <DealCalculator deal={deal} setDeal={setDeal} report={R} theme={theme} onSave={saveCurrentReport} />}
+            {activeResultTool === "deal" && <DealCalculator deal={deal} setDeal={setDeal} report={R} theme={theme} onSave={() => saveCurrentReport("Deal metrics saved.")} />}
             {activeResultTool === "confidence" && <ConfidenceCard confidence={R.meta?.compConfidence || compConfidence(R)} />}
             {activeResultTool === "actions" && <ReportActions reportId={lastSavedReportId} onShare={copyShareLink} onSave={saveCurrentReport} onRerun={rerunAiAnalysis} rerunning={rerunningAnalysis} />}
 
@@ -1796,6 +1913,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
       {/* Modals */}
       {showSettings && <SettingsModal onClose={()=>setShowSettings(false)} user={user} theme={theme} setTheme={setTheme} onSignOut={onSignOut} />}
       {showHistory  && <HistoryPanel  onClose={()=>setShowHistory(false)}  onLoad={loadFromHistory} user={user} />}
+      <ToastContainer />
     </div>
   );
 }
