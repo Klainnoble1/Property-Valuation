@@ -1748,7 +1748,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
             {A?.analystNote && (
               <div style={{ background:"rgba(201,168,76,.04)", border:"1px solid rgba(201,168,76,.15)", borderRadius:14, padding:"20px 24px", marginBottom:14 }}>
                 <div style={{ fontSize:9, color:"#c9a84c", fontFamily:"sans-serif", textTransform:"uppercase", letterSpacing:"2px", marginBottom:10 }}>Analyst Summary</div>
-                <div style={{ fontSize:14, color:"#b0a898", lineHeight:1.85 }}>{A.analystNote}</div>
+                <div style={{ fontSize:14, color:"#b0a898", lineHeight:1.85, overflowWrap:"anywhere", wordBreak:"break-word" }}>{A.analystNote}</div>
               </div>
             )}
 
@@ -1760,7 +1760,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
                 </div>
                 <div>
                   <div style={{ fontSize:9, color:"#4a4840", fontFamily:"sans-serif", textTransform:"uppercase", letterSpacing:1, marginBottom:4 }}>Verdict</div>
-                  <div style={{ fontSize:15, color:"#f0e8d8" }}>{A.verdict}</div>
+                  <div style={{ fontSize:15, color:"#f0e8d8", overflowWrap:"anywhere", wordBreak:"break-word" }}>{A.verdict}</div>
                 </div>
               </div>
             )}
@@ -1807,7 +1807,7 @@ const SectionLabel = ({children}) => <div style={{ fontSize:10, letterSpacing:"2
 const BulletLine = ({text,color,icon,small}) => (
   <div style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:6 }}>
     <span style={{ color, marginTop:1, fontSize:small?9:11, flexShrink:0 }}>{icon}</span>
-    <span style={{ fontSize:small?11:12, color:"#a09888", fontFamily:"sans-serif", lineHeight:1.5 }}>{text}</span>
+    <span style={{ fontSize:small?11:12, color:"#a09888", fontFamily:"sans-serif", lineHeight:1.5, minWidth:0, overflowWrap:"anywhere", wordBreak:"break-word" }}>{text}</span>
   </div>
 );
 const DeltaBadge = ({v,suffix,invert}) => {
