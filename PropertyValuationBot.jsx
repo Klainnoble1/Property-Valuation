@@ -93,8 +93,34 @@ function firstProperty(data) {
   if (Array.isArray(data.props)) return data.props[0] ?? null;
   if (Array.isArray(data.propertyResults)) return data.propertyResults[0] ?? null;
   if (Array.isArray(data.listResults)) return data.listResults[0] ?? null;
+  if (Array.isArray(data.properties)) return data.properties[0] ?? null;
+  if (Array.isArray(data.homes)) return data.homes[0] ?? null;
+  if (data.propertyDetails) return data.propertyDetails;
+  if (data.home) return data.home;
   if (data.property) return data.property;
   return data;
+}
+
+function lookupValue(source, keys) {
+  if (!source || typeof source !== "object") return null;
+  for (const key of keys) {
+    const value = source[key];
+    if (value != null && value !== "") return value;
+  }
+  for (const key of ["property", "propertyDetails", "home", "detail", "hdpData", "zillowProperty"]) {
+    const value = lookupValue(source[key], keys);
+    if (value != null && value !== "") return value;
+  }
+  return null;
+}
+
+function propertyLookupId(...sources) {
+  const keys = ["zpid", "zillowPropertyId", "propertyZpid", "property_id", "propertyId", "id"];
+  for (const source of sources) {
+    const value = lookupValue(source, keys);
+    if (value != null && value !== "") return value;
+  }
+  return null;
 }
 
 function zestimateValues(data) {
@@ -128,22 +154,31 @@ async function fetchZillow(address) {
   } catch (e) {
     const search = await getJson("/search", { location: address }, "Property search");
     summary = firstProperty(search);
-    if (!summary?.zpid) throw new Error("Property not found. Try a more complete address (include city, state).");
-    detail = firstProperty(await getJson("/property-details", { zpid: summary.zpid }, "Property details"));
+    const summaryId = propertyLookupId(summary);
+    if (!summaryId) throw new Error("Property not found. Try a more complete address (include city, state).");
+    try {
+      detail = firstProperty(await getJson("/property-details", { zpid: summaryId }, "Property details"));
+    } catch {
+      detail = summary;
+    }
   }
 
-  const zpid = detail?.zpid ?? summary?.zpid;
-  if (!zpid) throw new Error("Property found, but the data provider did not return a valuation lookup id.");
+  const zpid = propertyLookupId(detail, summary);
+  if (!detail && !summary) throw new Error("Property not found. Try a more complete address (include city, state).");
 
   let estimate = {};
-  try {
-    estimate = zestimateValues(await getJson("/zestimate", { zpid }, "Valuation estimate"));
-  } catch (e) {
+  if (zpid) {
+    try {
+      estimate = zestimateValues(await getJson("/zestimate", { zpid }, "Valuation estimate"));
+    } catch (e) {
+      estimate = zestimateValues(detail);
+    }
+  } else {
     estimate = zestimateValues(detail);
   }
 
   const mergedDetail = { ...detail, ...estimate };
-  return { zpid, summary: summary ?? detail, detail: mergedDetail };
+  return { zpid: zpid ? String(zpid) : null, summary: summary ?? detail, detail: mergedDetail };
 }
 
 // ── OpenAI analysis ───────────────────────────────────────────────────────────
