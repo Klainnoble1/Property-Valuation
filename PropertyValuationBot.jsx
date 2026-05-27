@@ -776,20 +776,41 @@ function PhotoGallery({ photos = [] }) {
   );
 }
 
-function LeadCapture({ lead, setLead }) {
+function toolTheme(theme) {
+  const light = theme === "light";
+  return {
+    panel: light ? "#ffffff" : "#13161d",
+    panelAlt: light ? "#fbf8f2" : "#171b24",
+    border: light ? "#d8cebd" : "#303541",
+    text: light ? "#201b14" : "#f8f0df",
+    muted: light ? "#5f5447" : "#d0c8b8",
+    label: light ? "#8a6419" : "#e8c97a",
+    inputBg: light ? "#ffffff" : "#171b24",
+    inputBorder: light ? "#bcae99" : "#3a4050",
+  };
+}
+
+function inputStyle(theme) {
+  const t = toolTheme(theme);
+  return { ...miniInput, background:t.inputBg, border:`1px solid ${t.inputBorder}`, color:t.text };
+}
+
+function LeadCapture({ lead, setLead, theme }) {
   const update = (key, value) => setLead((current) => ({ ...current, [key]: value }));
+  const t = toolTheme(theme);
+  const field = inputStyle(theme);
   return (
-    <div style={{ background:"#13161d", border:"1px solid #222530", borderRadius:12, padding:"14px", marginBottom:16 }}>
-      <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:"#c9a84c", fontFamily:"sans-serif", marginBottom:10 }}>Lead Capture</div>
+    <div style={{ background:t.panel, border:`1px solid ${t.border}`, borderRadius:12, padding:"14px", marginBottom:16 }}>
+      <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:t.label, fontFamily:"sans-serif", marginBottom:10, fontWeight:800 }}>Lead Capture</div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:8 }}>
-        <input value={lead.name} onChange={(e)=>update("name", e.target.value)} placeholder="Client name" style={miniInput} />
-        <input value={lead.email} onChange={(e)=>update("email", e.target.value)} placeholder="Email" style={miniInput} />
-        <input value={lead.phone} onChange={(e)=>update("phone", e.target.value)} placeholder="Phone" style={miniInput} />
-        <select value={lead.timeline} onChange={(e)=>update("timeline", e.target.value)} style={miniInput}>
+        <input value={lead.name} onChange={(e)=>update("name", e.target.value)} placeholder="Client name" style={field} />
+        <input value={lead.email} onChange={(e)=>update("email", e.target.value)} placeholder="Email" style={field} />
+        <input value={lead.phone} onChange={(e)=>update("phone", e.target.value)} placeholder="Phone" style={field} />
+        <select value={lead.timeline} onChange={(e)=>update("timeline", e.target.value)} style={field}>
           {["ASAP", "30-60 days", "60-90 days", "Just researching"].map((option) => <option key={option}>{option}</option>)}
         </select>
       </div>
-      <input value={lead.motivation} onChange={(e)=>update("motivation", e.target.value)} placeholder="Motivation or notes" style={{ ...miniInput, marginTop:8 }} />
+      <input value={lead.motivation} onChange={(e)=>update("motivation", e.target.value)} placeholder="Motivation or notes" style={{ ...field, marginTop:8 }} />
     </div>
   );
 }
@@ -804,7 +825,8 @@ function ReportActions({ reportId, onShare, onSave }) {
   );
 }
 
-function ResultsMenu({ active, setActive }) {
+function ResultsMenu({ active, setActive, theme }) {
+  const t = toolTheme(theme);
   const tabs = [
     ["lead", "Lead"],
     ["deal", "Deal"],
@@ -812,7 +834,7 @@ function ResultsMenu({ active, setActive }) {
     ["actions", "Actions"],
   ];
   return (
-    <div className="report-actions" style={{ background:"#13161d", border:"1px solid #303541", borderRadius:14, padding:8, marginBottom:14, display:"grid", gridTemplateColumns:"repeat(4,minmax(0,1fr))", gap:6 }}>
+    <div className="report-actions" style={{ background:t.panel, border:`1px solid ${t.border}`, borderRadius:14, padding:8, marginBottom:14, display:"grid", gridTemplateColumns:"repeat(4,minmax(0,1fr))", gap:6 }}>
       {tabs.map(([key, label]) => {
         const selected = active === key;
         return (
@@ -821,9 +843,9 @@ function ResultsMenu({ active, setActive }) {
             type="button"
             onClick={() => setActive(key)}
             style={{
-              background:selected ? "linear-gradient(135deg,#c9a84c,#e8c97a)" : "#171b24",
-              border:selected ? "none" : "1px solid #303541",
-              color:selected ? "#0c0e13" : "#d0c8b8",
+              background:selected ? "linear-gradient(135deg,#c9a84c,#e8c97a)" : t.panelAlt,
+              border:selected ? "none" : `1px solid ${t.border}`,
+              color:selected ? "#0c0e13" : t.text,
               borderRadius:9,
               padding:"10px 8px",
               fontFamily:"sans-serif",
@@ -840,11 +862,12 @@ function ResultsMenu({ active, setActive }) {
   );
 }
 
-function PipelinePanel({ value, onChange }) {
+function PipelinePanel({ value, onChange, theme }) {
+  const t = toolTheme(theme);
   return (
-    <div className="print-hide" style={{ background:"#13161d", border:"1px solid #303541", borderRadius:12, padding:"14px", marginBottom:14 }}>
-      <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:"#e8c97a", fontFamily:"sans-serif", marginBottom:8 }}>Pipeline Status</div>
-      <select value={value} onChange={(e)=>onChange(e.target.value)} style={miniInput}>
+    <div className="print-hide" style={{ background:t.panel, border:`1px solid ${t.border}`, borderRadius:12, padding:"14px", marginBottom:14 }}>
+      <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:t.label, fontFamily:"sans-serif", marginBottom:8, fontWeight:800 }}>Pipeline Status</div>
+      <select value={value} onChange={(e)=>onChange(e.target.value)} style={inputStyle(theme)}>
         {PIPELINE_STATUSES.map((status) => <option key={status}>{status}</option>)}
       </select>
     </div>
@@ -866,18 +889,20 @@ function ConfidenceCard({ confidence }) {
   );
 }
 
-function DealCalculator({ deal, setDeal, report }) {
+function DealCalculator({ deal, setDeal, report, theme }) {
   const update = (key, value) => setDeal((current) => ({ ...current, [key]: value }));
   const metrics = calculateDeal(deal, report);
+  const t = toolTheme(theme);
+  const field = inputStyle(theme);
   return (
-    <div style={{ background:"#13161d", border:"1px solid #222530", borderRadius:14, padding:"20px 22px", marginBottom:14 }}>
+    <div style={{ background:t.panel, border:`1px solid ${t.border}`, borderRadius:14, padding:"20px 22px", marginBottom:14 }}>
       <SectionLabel>Deal Calculator</SectionLabel>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:8, marginBottom:12 }}>
-        <input value={deal.purchasePrice} onChange={(e)=>update("purchasePrice", e.target.value)} placeholder="Purchase price" style={miniInput} />
-        <input value={deal.rehabBudget} onChange={(e)=>update("rehabBudget", e.target.value)} placeholder="Rehab budget" style={miniInput} />
-        <input value={deal.holdingCosts} onChange={(e)=>update("holdingCosts", e.target.value)} placeholder="Holding costs" style={miniInput} />
-        <input value={deal.closingCosts} onChange={(e)=>update("closingCosts", e.target.value)} placeholder="Closing costs" style={miniInput} />
-        <input value={deal.arv} onChange={(e)=>update("arv", e.target.value)} placeholder="ARV override" style={miniInput} />
+        <input value={deal.purchasePrice} onChange={(e)=>update("purchasePrice", e.target.value)} placeholder="Purchase price" style={field} />
+        <input value={deal.rehabBudget} onChange={(e)=>update("rehabBudget", e.target.value)} placeholder="Rehab budget" style={field} />
+        <input value={deal.holdingCosts} onChange={(e)=>update("holdingCosts", e.target.value)} placeholder="Holding costs" style={field} />
+        <input value={deal.closingCosts} onChange={(e)=>update("closingCosts", e.target.value)} placeholder="Closing costs" style={field} />
+        <input value={deal.arv} onChange={(e)=>update("arv", e.target.value)} placeholder="ARV override" style={field} />
       </div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))", gap:8 }}>
         <MiniStat label="Total Cost" value={fmtK(metrics.totalCost)} />
@@ -1446,14 +1471,14 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
             <RehabSelector value={rehabStyle} onChange={updateRehabStyle} />
             <RehabSummary rehab={H} />
             <PhotoGallery photos={propertyPhotos} />
-            <ResultsMenu active={activeResultTool} setActive={setActiveResultTool} />
+            <ResultsMenu active={activeResultTool} setActive={setActiveResultTool} theme={theme} />
             {activeResultTool === "lead" && (
               <>
-                <div className="lead-panel"><LeadCapture lead={lead} setLead={setLead} /></div>
-                <PipelinePanel value={pipelineStatus} onChange={setPipelineStatus} />
+                <div className="lead-panel"><LeadCapture lead={lead} setLead={setLead} theme={theme} /></div>
+                <PipelinePanel value={pipelineStatus} onChange={setPipelineStatus} theme={theme} />
               </>
             )}
-            {activeResultTool === "deal" && <DealCalculator deal={deal} setDeal={setDeal} report={R} />}
+            {activeResultTool === "deal" && <DealCalculator deal={deal} setDeal={setDeal} report={R} theme={theme} />}
             {activeResultTool === "confidence" && <ConfidenceCard confidence={R.meta?.compConfidence || compConfidence(R)} />}
             {activeResultTool === "actions" && <ReportActions reportId={lastSavedReportId} onShare={copyShareLink} onSave={saveCurrentReport} />}
 
