@@ -815,10 +815,11 @@ function LeadCapture({ lead, setLead, theme }) {
   );
 }
 
-function ReportActions({ reportId, onShare, onSave }) {
+function ReportActions({ reportId, onShare, onSave, onRerun, rerunning }) {
   return (
     <div className="report-actions" style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:14 }}>
       <button type="button" onClick={onSave} style={hdrBtn}>Save report</button>
+      <button type="button" onClick={onRerun} disabled={rerunning} style={{ ...hdrBtn, opacity:rerunning ? .65 : 1 }}>{rerunning ? "Rerunning..." : "Rerun AI analysis"}</button>
       <button type="button" onClick={() => window.print()} style={hdrBtn}>Export PDF</button>
       <button type="button" onClick={onShare} style={hdrBtn}>{reportId ? "Copy share link" : "Save to share"}</button>
     </div>
@@ -1102,6 +1103,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
   const [deal, setDeal] = useState(defaultDeal);
   const [pipelineStatus, setPipelineStatus] = useState("New Lead");
   const [activeResultTool, setActiveResultTool] = useState("lead");
+  const [rerunningAnalysis, setRerunningAnalysis] = useState(false);
   const [lastSavedReportId, setLastSavedReportId] = useState(null);
   const [shareMessage, setShareMessage] = useState("");
   const [monthlySearches, setMonthlySearches] = useState(0);
@@ -1310,6 +1312,30 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
     setShareMessage("Report saved.");
   }
 
+  async function rerunAiAnalysis() {
+    if (!query.trim() || rerunningAnalysis) return;
+    const raw = zillowRaw || { zpid: result?.zpid || null, summary: result?.property || null, detail: result?.property || null };
+    setRerunningAnalysis(true);
+    setError(null);
+    setShareMessage("");
+    try {
+      const analysis = await runOpenAI(query, raw);
+      const baseAnalysis = stripRehab(analysis);
+      const displayAnalysis = applyRehabToReport(baseAnalysis, rehabStyle);
+      setBaseResult(baseAnalysis);
+      setResult(displayAnalysis);
+      saveCachedAnalysis({ address: query, zpid: raw.zpid, report: baseAnalysis, zillowRaw: raw });
+      setShareMessage("AI analysis rerun complete.");
+    } catch (err) {
+      const fallback = buildBasicAnalysis(query, raw, err);
+      setBaseResult(stripRehab(fallback));
+      setResult(applyRehabToReport(stripRehab(fallback), rehabStyle));
+      setError(err.message || "AI analysis rerun failed.");
+    } finally {
+      setRerunningAnalysis(false);
+    }
+  }
+
   const R = result;
   const P = R?.property;
   const Z = R?.zestimate;
@@ -1432,7 +1458,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
 
         {R && (
           <div style={{ animation:"fadeUp .5s ease", paddingBottom:60 }}>
-            <ReportActions reportId={lastSavedReportId} onShare={copyShareLink} onSave={saveCurrentReport} />
+            <ReportActions reportId={lastSavedReportId} onShare={copyShareLink} onSave={saveCurrentReport} onRerun={rerunAiAnalysis} rerunning={rerunningAnalysis} />
 
             {/* ①  Valuation Hero */}
             {Z?.value && (
@@ -1480,7 +1506,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
             )}
             {activeResultTool === "deal" && <DealCalculator deal={deal} setDeal={setDeal} report={R} theme={theme} />}
             {activeResultTool === "confidence" && <ConfidenceCard confidence={R.meta?.compConfidence || compConfidence(R)} />}
-            {activeResultTool === "actions" && <ReportActions reportId={lastSavedReportId} onShare={copyShareLink} onSave={saveCurrentReport} />}
+            {activeResultTool === "actions" && <ReportActions reportId={lastSavedReportId} onShare={copyShareLink} onSave={saveCurrentReport} onRerun={rerunAiAnalysis} rerunning={rerunningAnalysis} />}
 
             {/* ②  Property Card */}
             <div style={{ background:"#13161d", border:"1px solid #222530", borderRadius:14, padding:"22px 24px", marginBottom:14 }}>
@@ -1667,7 +1693,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
         {/* Empty state */}
         {!R && !loading && (
           <div style={{ textAlign:"center", padding:"28px 0 10px", color:"#d0c8b8" }}>
-            <div style={{ fontSize:58, marginBottom:12 }}>??</div>
+            <div style={{ width:58, height:58, borderRadius:16, margin:"0 auto 12px", display:"flex", alignItems:"center", justifyContent:"center", background:"linear-gradient(135deg,#c9a84c,#e8c97a)", color:"#0c0e13", fontFamily:"sans-serif", fontSize:28, fontWeight:900 }}>H</div>
             <div style={{ fontFamily:"sans-serif", fontSize:18, fontWeight:800, color:"#f0e8d8" }}>Enter a property address above to begin</div>
           </div>
         )}
