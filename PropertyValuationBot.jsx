@@ -135,13 +135,30 @@ function imageUrlFromValue(value) {
   return value.url || value.href || value.src || value.imgSrc || value.imageUrl || value.photoUrl || largestJpeg || largestWebp || null;
 }
 
+function canonicalPhotoKey(url) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname.includes("maps.googleapis.com") && parsed.pathname.includes("/streetview")) {
+      return `streetview:${parsed.searchParams.get("location") || parsed.searchParams.get("pano") || url}`;
+    }
+    if (parsed.hostname.includes("photos.zillowstatic.com")) {
+      return parsed.pathname.replace(/-[^-/.]+(?=\.[a-z]+$)/i, "");
+    }
+    parsed.search = "";
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 function collectPropertyPhotos(source, limit = 12, seen = new Set()) {
   if (!source || seen.size >= limit) return [];
   const photos = [];
   const add = (value) => {
     const url = imageUrlFromValue(value);
-    if (url && !seen.has(url)) {
-      seen.add(url);
+    const key = url ? canonicalPhotoKey(url) : null;
+    if (url && key && !seen.has(key)) {
+      seen.add(key);
       photos.push(url);
     }
   };
