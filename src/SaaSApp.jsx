@@ -238,7 +238,9 @@ function AdminDashboard({ session, theme }) {
                   <tr>
                     <Th styles={styles}>Address</Th>
                     <Th styles={styles}>User</Th>
+                    <Th styles={styles}>Lead</Th>
                     <Th styles={styles}>Rehab</Th>
+                    <Th styles={styles}>Status</Th>
                     <Th styles={styles}>Valuation</Th>
                     <Th styles={styles}>Score</Th>
                     <Th styles={styles}>Created</Th>
@@ -249,9 +251,11 @@ function AdminDashboard({ session, theme }) {
                     <tr key={search.id}>
                       <Td styles={styles}>{search.address}</Td>
                       <Td styles={styles}>{search.userEmail}</Td>
+                      <Td styles={styles}>{search.lead?.name || search.lead?.email || "-"}</Td>
                       <Td styles={styles}>{search.rehabStyle || "—"}</Td>
+                      <Td styles={styles}>{search.pipelineStatus || "New Lead"}</Td>
                       <Td styles={styles}>{money(search.valuation || search.estimate)}</Td>
-                      <Td styles={styles}>{search.score ?? "—"}</Td>
+                      <Td styles={styles}>{search.score ?? "-"}{search.compConfidence ? ` / C${search.compConfidence}` : ""}</Td>
                       <Td styles={styles}>{dateTime(search.createdAt)}</Td>
                     </tr>
                   ))}
@@ -338,7 +342,7 @@ function getAdminStyles(theme) {
     sectionTitle: { margin:0, fontSize:16, fontWeight:700 },
     muted: { color: light ? "#7a6c58" : "#8a8174", fontSize:12 },
     tableWrap: { overflowX:"auto" },
-    table: { width:"100%", borderCollapse:"collapse", minWidth:680 },
+    table: { width:"100%", borderCollapse:"collapse", minWidth:900 },
     th: { textAlign:"left", color: light ? "#7a6c58" : "#8a8174", fontSize:11, textTransform:"uppercase", letterSpacing:1, padding:"12px 18px", borderBottom:`1px solid ${light ? "#eee4d4" : "#222530"}`, whiteSpace:"nowrap" },
     td: { padding:"13px 18px", borderBottom:`1px solid ${light ? "#f0e8da" : "#1e2028"}`, color: light ? "#31291f" : "#d8d0c0", fontSize:13, verticalAlign:"top" },
   };

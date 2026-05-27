@@ -67,6 +67,11 @@ const REHAB_STYLES = {
 };
 
 const DEFAULT_REHAB_KEY = "none";
+const FREE_SEARCH_LIMIT = 10;
+const PIPELINE_STATUSES = ["New Lead", "Contacted", "Offer Made", "Under Contract", "Closed"];
+
+const defaultLead = { name: "", email: "", phone: "", motivation: "", timeline: "30-60 days" };
+const defaultDeal = { purchasePrice: "", rehabBudget: "", holdingCosts: "", closingCosts: "", arv: "" };
 
 function rehabProfile(key) {
   return REHAB_STYLES[key] || REHAB_STYLES[DEFAULT_REHAB_KEY];
@@ -481,6 +486,37 @@ function stripRehab(report) {
   return baseReport;
 }
 
+function toNumber(value) {
+  const n = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+
+function calculateDeal(deal, report) {
+  const arv = toNumber(deal.arv) || Number(report?.rehab?.afterRepairValue || report?.valuation?.mid || report?.zestimate?.value || 0);
+  const purchasePrice = toNumber(deal.purchasePrice);
+  const rehabBudget = toNumber(deal.rehabBudget) || Number(report?.rehab?.budgetHigh || 0);
+  const holdingCosts = toNumber(deal.holdingCosts);
+  const closingCosts = toNumber(deal.closingCosts);
+  const totalCost = purchasePrice + rehabBudget + holdingCosts + closingCosts;
+  const profit = arv - totalCost;
+  const roi = totalCost > 0 ? Math.round((profit / totalCost) * 1000) / 10 : null;
+  const maxAllowableOffer = Math.max(0, Math.round(arv * 0.7 - rehabBudget - holdingCosts - closingCosts));
+  return { arv, purchasePrice, rehabBudget, holdingCosts, closingCosts, totalCost, profit, roi, maxAllowableOffer };
+}
+
+function compConfidence(report) {
+  const comps = report?.comps || [];
+  let score = 25;
+  const reasons = [];
+  if (comps.length >= 3) { score += 30; reasons.push(`${comps.length} comparable sales found`); }
+  else reasons.push("Needs at least 3 comparable sales for stronger confidence");
+  const highMatches = comps.filter((c) => c.similarity === "high").length;
+  if (highMatches) { score += Math.min(20, highMatches * 7); reasons.push(`${highMatches} high-match comps`); }
+  if (report?.market?.medianSalePrice || report?.market?.medianPricePerSqft) { score += 15; reasons.push("Market context available"); }
+  if (report?.property?.sqft && report?.property?.beds && report?.property?.baths) { score += 10; reasons.push("Core property facts available"); }
+  return { score: Math.min(100, score), reasons };
+}
+
 function sanitizeLegacyReport(value) {
   if (Array.isArray(value)) return value.map(sanitizeLegacyReport);
   if (value && typeof value === "object") {
@@ -740,6 +776,72 @@ function PhotoGallery({ photos = [] }) {
   );
 }
 
+function LeadCapture({ lead, setLead }) {
+  const update = (key, value) => setLead((current) => ({ ...current, [key]: value }));
+  return (
+    <div style={{ background:"#13161d", border:"1px solid #222530", borderRadius:12, padding:"14px", marginBottom:16 }}>
+      <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:"#c9a84c", fontFamily:"sans-serif", marginBottom:10 }}>Lead Capture</div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:8 }}>
+        <input value={lead.name} onChange={(e)=>update("name", e.target.value)} placeholder="Client name" style={miniInput} />
+        <input value={lead.email} onChange={(e)=>update("email", e.target.value)} placeholder="Email" style={miniInput} />
+        <input value={lead.phone} onChange={(e)=>update("phone", e.target.value)} placeholder="Phone" style={miniInput} />
+        <select value={lead.timeline} onChange={(e)=>update("timeline", e.target.value)} style={miniInput}>
+          {["ASAP", "30-60 days", "60-90 days", "Just researching"].map((option) => <option key={option}>{option}</option>)}
+        </select>
+      </div>
+      <input value={lead.motivation} onChange={(e)=>update("motivation", e.target.value)} placeholder="Motivation or notes" style={{ ...miniInput, marginTop:8 }} />
+    </div>
+  );
+}
+
+function ReportActions({ reportId, onShare, onSave }) {
+  return (
+    <div className="report-actions" style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:14 }}>
+      <button type="button" onClick={onSave} style={hdrBtn}>Save report</button>
+      <button type="button" onClick={() => window.print()} style={hdrBtn}>Export PDF</button>
+      <button type="button" onClick={onShare} style={hdrBtn}>{reportId ? "Copy share link" : "Save to share"}</button>
+    </div>
+  );
+}
+
+function ConfidenceCard({ confidence }) {
+  if (!confidence) return null;
+  const tone = confidence.score >= 75 ? "green" : confidence.score >= 50 ? "gold" : "red";
+  return (
+    <div style={{ background:"#13161d", border:"1px solid #222530", borderRadius:14, padding:"18px 20px", marginBottom:14 }}>
+      <SectionLabel>Comp Confidence</SectionLabel>
+      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
+        <Badge tone={tone}>{confidence.score}/100</Badge>
+        <div style={{ color:"#b0a898", fontSize:12, fontFamily:"sans-serif" }}>Data quality score for this valuation.</div>
+      </div>
+      {(confidence.reasons || []).slice(0, 4).map((reason, i) => <BulletLine key={i} text={reason} color="#c9a84c" icon="-" small />)}
+    </div>
+  );
+}
+
+function DealCalculator({ deal, setDeal, report }) {
+  const update = (key, value) => setDeal((current) => ({ ...current, [key]: value }));
+  const metrics = calculateDeal(deal, report);
+  return (
+    <div style={{ background:"#13161d", border:"1px solid #222530", borderRadius:14, padding:"20px 22px", marginBottom:14 }}>
+      <SectionLabel>Deal Calculator</SectionLabel>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:8, marginBottom:12 }}>
+        <input value={deal.purchasePrice} onChange={(e)=>update("purchasePrice", e.target.value)} placeholder="Purchase price" style={miniInput} />
+        <input value={deal.rehabBudget} onChange={(e)=>update("rehabBudget", e.target.value)} placeholder="Rehab budget" style={miniInput} />
+        <input value={deal.holdingCosts} onChange={(e)=>update("holdingCosts", e.target.value)} placeholder="Holding costs" style={miniInput} />
+        <input value={deal.closingCosts} onChange={(e)=>update("closingCosts", e.target.value)} placeholder="Closing costs" style={miniInput} />
+        <input value={deal.arv} onChange={(e)=>update("arv", e.target.value)} placeholder="ARV override" style={miniInput} />
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))", gap:8 }}>
+        <MiniStat label="Total Cost" value={fmtK(metrics.totalCost)} />
+        <MiniStat label="Projected Profit" value={fmtK(metrics.profit)} />
+        <MiniStat label="ROI" value={metrics.roi == null ? "-" : `${metrics.roi}%`} />
+        <MiniStat label="Max Offer" value={fmtK(metrics.maxAllowableOffer)} />
+      </div>
+    </div>
+  );
+}
+
 function SettingsModal({ onClose, user, theme, setTheme, onSignOut }) {
   const [fullName, setFullName] = useState(user?.user_metadata?.full_name || user?.user_metadata?.name || "");
   const [saving, setSaving] = useState(false);
@@ -900,6 +1002,7 @@ function HistoryPanel({ onClose, onLoad, user }) {
               {it.cmaMid    && <Badge tone="neutral">CMA: {fmtK(it.cmaMid)}</Badge>}
               {it.score     && <Badge tone={it.score>=70?"green":it.score>=45?"gold":"red"}>Score {it.score}/100</Badge>}
               {(it.rehabStyle || it.report?.rehab?.label) && <Badge tone="blue">{it.rehabStyle || it.report.rehab.label}</Badge>}
+              {it.report?.meta?.pipelineStatus && <Badge tone="neutral">{it.report.meta.pipelineStatus}</Badge>}
             </div>
             <div style={{ fontSize:10, color:"#3a3830", fontFamily:"sans-serif" }}>{new Date(it.savedAt).toLocaleDateString()}</div>
           </div>
@@ -923,9 +1026,43 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
   const [result,      setResult]      = useState(null);
   const [zillowRaw,   setZillowRaw]   = useState(null);
   const [propertyPhotos, setPropertyPhotos] = useState([]);
+  const [lead, setLead] = useState(defaultLead);
+  const [deal, setDeal] = useState(defaultDeal);
+  const [pipelineStatus, setPipelineStatus] = useState("New Lead");
+  const [lastSavedReportId, setLastSavedReportId] = useState(null);
+  const [shareMessage, setShareMessage] = useState("");
+  const [monthlySearches, setMonthlySearches] = useState(0);
   const [error,       setError]       = useState(null);
   const [showSettings,setShowSettings]= useState(false);
   const [showHistory, setShowHistory] = useState(false);
+
+  useEffect(() => {
+    if (!supabase || !user?.id) return;
+    const since = new Date();
+    since.setDate(1);
+    supabase
+      .from("valuation_reports")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", since.toISOString())
+      .then(({ count }) => setMonthlySearches(count || 0));
+  }, [user?.id]);
+
+  useEffect(() => {
+    const reportId = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("report") : null;
+    if (!reportId || !supabase || !user?.id) return;
+    supabase
+      .from("valuation_reports")
+      .select("id, address, zpid, report")
+      .eq("id", reportId)
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data, error }) => {
+        if (error || !data?.report) return;
+        setLastSavedReportId(data.id);
+        loadFromHistory({ id: data.id, address: data.address, zpid: data.zpid, report: data.report });
+      });
+  }, [user?.id]);
 
   async function fetchBackgroundPhotoPayload({ address, zpid }) {
     try {
@@ -956,36 +1093,53 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
   }
 
   async function saveSearchRecord(displayAnalysis, zpid, raw = zillowRaw) {
+    const enrichedReport = {
+      ...displayAnalysis,
+      meta: {
+        ...(displayAnalysis.meta || {}),
+        lead,
+        deal,
+        dealMetrics: calculateDeal(deal, displayAnalysis),
+        pipelineStatus,
+        compConfidence: compConfidence(displayAnalysis),
+      },
+    };
     const entry = {
       id: `${HP}${Date.now()}`,
       savedAt: Date.now(),
-      address: displayAnalysis.property?.address || query,
-      zestimate: displayAnalysis.zestimate?.value,
-      cmaMid: displayAnalysis.valuation?.mid,
-      score: displayAnalysis.analysis?.investmentScore,
+      address: enrichedReport.property?.address || query,
+      zestimate: enrichedReport.zestimate?.value,
+      cmaMid: enrichedReport.valuation?.mid,
+      score: enrichedReport.analysis?.investmentScore,
       zpid,
-      rehabStyle: displayAnalysis.rehab?.label,
-      report: displayAnalysis,
+      rehabStyle: enrichedReport.rehab?.label,
+      report: enrichedReport,
       zillowRaw: raw,
     };
     try { await window.storage.set(entry.id, JSON.stringify(entry)); } catch {}
     if (supabase && user?.id) {
       try {
-        await supabase.from("valuation_reports").insert({
+        const { data } = await supabase.from("valuation_reports").insert({
           user_id: user.id,
           address: entry.address,
           zestimate: entry.zestimate,
           cma_mid: entry.cmaMid,
           score: entry.score,
           zpid: entry.zpid ? String(entry.zpid) : null,
-          report: displayAnalysis,
-        });
+          report: enrichedReport,
+        }).select("id").single();
+        if (data?.id) setLastSavedReportId(data.id);
+        setMonthlySearches((count) => count + 1);
       } catch {}
     }
   }
 
   async function analyze() {
     if (!query.trim() || loading) return;
+    if (monthlySearches >= FREE_SEARCH_LIMIT) {
+      setError(`Free plan limit reached (${FREE_SEARCH_LIMIT} searches this month). Upgrade billing can be enabled next.`);
+      return;
+    }
     setLoading(true); setBaseResult(null); setResult(null); setZillowRaw(null); setPropertyPhotos([]); setError(null); setStep(0);
 
     let zillow = null;
@@ -1042,6 +1196,9 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
       setBaseResult(cleanReport);
       setResult(item.report);
       setRehabStyle(item.report.rehab?.styleKey || DEFAULT_REHAB_KEY);
+      setLead(item.report.meta?.lead || defaultLead);
+      setDeal(item.report.meta?.deal || defaultDeal);
+      setPipelineStatus(item.report.meta?.pipelineStatus || "New Lead");
       const raw = item.zillowRaw || null;
       setZillowRaw(raw);
       hydratePhotos(raw, { address: item.address, zpid: item.zpid });
@@ -1060,6 +1217,24 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
     setRehabStyle(nextStyle);
     const source = baseResult || stripRehab(result);
     if (source) setResult(applyRehabToReport(source, nextStyle));
+  }
+
+  async function copyShareLink() {
+    if (!lastSavedReportId) {
+      setShareMessage("Run or load a saved report first.");
+      return;
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.set("report", lastSavedReportId);
+    url.searchParams.delete("address");
+    await navigator.clipboard?.writeText(url.toString());
+    setShareMessage("Share link copied.");
+  }
+
+  function saveCurrentReport() {
+    if (!result) return;
+    saveSearchRecord(result, zillowRaw?.zpid || result?.zpid || null, zillowRaw);
+    setShareMessage("Report saved.");
   }
 
   const R = result;
@@ -1089,6 +1264,10 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
           .hero-card-row, .property-title-row { flex-direction: column; align-items: flex-start !important; }
           .hero-card-row > div { text-align: left !important; }
           .valuation-amount { font-size: 32px !important; }
+        }
+        @media print {
+          .app-header, .report-actions, .lead-panel, .search-row, .print-hide { display:none !important; }
+          body { background:#fff !important; }
         }
       `}</style>
 
@@ -1123,6 +1302,8 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
         </div>
 
         {/* ── Search bar ── */}
+        <div className="lead-panel"><LeadCapture lead={lead} setLead={setLead} /></div>
+
         <div className="search-row" style={{ display:"flex", gap:10, marginBottom:16 }}>
           <input
             value={query}
@@ -1171,8 +1352,14 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
         )}
 
         {/* ── Results ── */}
+        <div className="print-hide" style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10, marginBottom:14, color:"#5a5850", fontFamily:"sans-serif", fontSize:11 }}>
+          <span>Free plan searches this month: {monthlySearches}/{FREE_SEARCH_LIMIT}</span>
+          {shareMessage && <span style={{ color:"#64c878" }}>{shareMessage}</span>}
+        </div>
+
         {R && (
           <div style={{ animation:"fadeUp .5s ease", paddingBottom:60 }}>
+            <ReportActions reportId={lastSavedReportId} onShare={copyShareLink} onSave={saveCurrentReport} />
 
             {/* ①  Valuation Hero */}
             {Z?.value && (
@@ -1211,6 +1398,14 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
             <RehabSelector value={rehabStyle} onChange={updateRehabStyle} />
             <RehabSummary rehab={H} />
             <PhotoGallery photos={propertyPhotos} />
+            <div className="print-hide" style={{ background:"#13161d", border:"1px solid #222530", borderRadius:12, padding:"14px", marginBottom:14 }}>
+              <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:"#c9a84c", fontFamily:"sans-serif", marginBottom:8 }}>Pipeline Status</div>
+              <select value={pipelineStatus} onChange={(e)=>setPipelineStatus(e.target.value)} style={miniInput}>
+                {PIPELINE_STATUSES.map((status) => <option key={status}>{status}</option>)}
+              </select>
+            </div>
+            <ConfidenceCard confidence={R.meta?.compConfidence || compConfidence(R)} />
+            <DealCalculator deal={deal} setDeal={setDeal} report={R} />
 
             {/* ②  Property Card */}
             <div style={{ background:"#13161d", border:"1px solid #222530", borderRadius:14, padding:"22px 24px", marginBottom:14 }}>
@@ -1412,6 +1607,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
 
 // ── Micro-components ──────────────────────────────────────────────────────────
 const hdrBtn = { background:"#13161d", border:"1px solid #1e2028", borderRadius:8, padding:"6px 12px", cursor:"pointer", color:"#9a9080", fontSize:11, fontFamily:"sans-serif" };
+const miniInput = { width:"100%", boxSizing:"border-box", background:"#0d0f14", border:"1px solid #2a2830", borderRadius:8, padding:"10px 11px", color:"#f0e8d8", fontFamily:"sans-serif", fontSize:12, outline:"none" };
 const SectionLabel = ({children}) => <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:"#7a7060", fontFamily:"sans-serif", marginBottom:12, paddingBottom:8, borderBottom:"1px solid #1e2028" }}>{children}</div>;
 const BulletLine = ({text,color,icon,small}) => (
   <div style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:6 }}>
