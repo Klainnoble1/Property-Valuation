@@ -812,7 +812,7 @@ function ConfidenceCard({ confidence }) {
       <SectionLabel>Comp Confidence</SectionLabel>
       <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
         <Badge tone={tone}>{confidence.score}/100</Badge>
-        <div style={{ color:"#b0a898", fontSize:12, fontFamily:"sans-serif" }}>Data quality score for this valuation.</div>
+        <div style={{ color:"#d0c8b8", fontSize:12, fontFamily:"sans-serif" }}>Data quality score for this valuation.</div>
       </div>
       {(confidence.reasons || []).slice(0, 4).map((reason, i) => <BulletLine key={i} text={reason} color="#c9a84c" icon="-" small />)}
     </div>
@@ -1277,7 +1277,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
           <div style={{ width:36, height:36, background:"linear-gradient(135deg,#c9a84c,#e8c97a)", borderRadius:9, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, boxShadow:"0 4px 16px rgba(201,168,76,.25)" }}>🏛</div>
           <div>
             <div style={{ fontSize:17, color:"#f0e8d8", letterSpacing:.3 }}>PropVal</div>
-            <div style={{ fontSize:9, color:"#5a5850", letterSpacing:"2px", textTransform:"uppercase", fontFamily:"sans-serif" }}>AI Property Valuation</div>
+            <div style={{ fontSize:9, color:"#8a8174", letterSpacing:"2px", textTransform:"uppercase", fontFamily:"sans-serif" }}>AI Property Valuation</div>
           </div>
         </div>
         <div className="app-header-actions" style={{ display:"flex", gap:8, alignItems:"center" }}>
@@ -1296,14 +1296,12 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
         {/* ── Hero text ── */}
         <div style={{ textAlign:"center", marginBottom:28 }}>
           <h1 style={{ fontSize:26, fontWeight:"normal", margin:"0 0 8px", color:"#f0e8d8" }}>Enter any property address</h1>
-          <p style={{ margin:0, fontSize:13, color:"#4a4840", fontFamily:"sans-serif" }}>
+          <p style={{ margin:0, fontSize:13, color:"#9a9080", fontFamily:"sans-serif" }}>
             Turn any address into a polished valuation lead report with live property data, AI analysis, and saved client history.
           </p>
         </div>
 
         {/* ── Search bar ── */}
-        <div className="lead-panel"><LeadCapture lead={lead} setLead={setLead} /></div>
-
         <div className="search-row" style={{ display:"flex", gap:10, marginBottom:16 }}>
           <input
             value={query}
@@ -1352,7 +1350,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
         )}
 
         {/* ── Results ── */}
-        <div className="print-hide" style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10, marginBottom:14, color:"#5a5850", fontFamily:"sans-serif", fontSize:11 }}>
+        <div className="print-hide" style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10, marginBottom:14, color:"#9a9080", fontFamily:"sans-serif", fontSize:12 }}>
           <span>Free plan searches this month: {monthlySearches}/{FREE_SEARCH_LIMIT}</span>
           {shareMessage && <span style={{ color:"#64c878" }}>{shareMessage}</span>}
         </div>
@@ -1398,8 +1396,9 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
             <RehabSelector value={rehabStyle} onChange={updateRehabStyle} />
             <RehabSummary rehab={H} />
             <PhotoGallery photos={propertyPhotos} />
-            <div className="print-hide" style={{ background:"#13161d", border:"1px solid #222530", borderRadius:12, padding:"14px", marginBottom:14 }}>
-              <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:"#c9a84c", fontFamily:"sans-serif", marginBottom:8 }}>Pipeline Status</div>
+            <div className="lead-panel"><LeadCapture lead={lead} setLead={setLead} /></div>
+            <div className="print-hide" style={{ background:"#13161d", border:"1px solid #303541", borderRadius:12, padding:"14px", marginBottom:14 }}>
+              <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:"#e8c97a", fontFamily:"sans-serif", marginBottom:8 }}>Pipeline Status</div>
               <select value={pipelineStatus} onChange={(e)=>setPipelineStatus(e.target.value)} style={miniInput}>
                 {PIPELINE_STATUSES.map((status) => <option key={status}>{status}</option>)}
               </select>
@@ -1606,8 +1605,8 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
 }
 
 // ── Micro-components ──────────────────────────────────────────────────────────
-const hdrBtn = { background:"#13161d", border:"1px solid #1e2028", borderRadius:8, padding:"6px 12px", cursor:"pointer", color:"#9a9080", fontSize:11, fontFamily:"sans-serif" };
-const miniInput = { width:"100%", boxSizing:"border-box", background:"#0d0f14", border:"1px solid #2a2830", borderRadius:8, padding:"10px 11px", color:"#f0e8d8", fontFamily:"sans-serif", fontSize:12, outline:"none" };
+const hdrBtn = { background:"#171b24", border:"1px solid #303541", borderRadius:8, padding:"6px 12px", cursor:"pointer", color:"#d0c8b8", fontSize:11, fontFamily:"sans-serif" };
+const miniInput = { width:"100%", boxSizing:"border-box", background:"#171b24", border:"1px solid #3a4050", borderRadius:8, padding:"10px 11px", color:"#f8f0df", fontFamily:"sans-serif", fontSize:13, outline:"none" };
 const SectionLabel = ({children}) => <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:"#7a7060", fontFamily:"sans-serif", marginBottom:12, paddingBottom:8, borderBottom:"1px solid #1e2028" }}>{children}</div>;
 const BulletLine = ({text,color,icon,small}) => (
   <div style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:6 }}>
