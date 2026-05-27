@@ -1735,9 +1735,24 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
 
         {/* Empty state */}
         {!R && !loading && (
-          <div style={{ textAlign:"center", padding:"28px 0 10px", color:"#d0c8b8" }}>
-            <div style={{ width:58, height:58, borderRadius:16, margin:"0 auto 12px", display:"flex", alignItems:"center", justifyContent:"center", background:"linear-gradient(135deg,#c9a84c,#e8c97a)", color:"#0c0e13", fontFamily:"sans-serif", fontSize:28, fontWeight:900 }}>H</div>
-            <div style={{ fontFamily:"sans-serif", fontSize:18, fontWeight:800, color:"#f0e8d8" }}>Enter a property address above to begin</div>
+          <div style={{ textAlign:"center", padding:"38px 0 20px", color:"#d0c8b8", animation:"fadeUp 0.6s ease" }}>
+            <div style={{ position:"relative", width:86, height:86, margin:"0 auto 24px" }}>
+              <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg,#c9a84c,#e8c97a)", borderRadius:"50%", animation:"pulse 2.5s infinite" }}></div>
+              <div style={{ position:"absolute", inset:3, background:theme==="light"?"#ffffff":"#0c0e13", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="url(#goldGrad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter:"drop-shadow(0 0 6px rgba(201,168,76,.4))" }}>
+                  <defs>
+                    <linearGradient id="goldGrad" x1="0" y1="0" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#e8c97a" />
+                      <stop offset="100%" stopColor="#c9a84c" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <path d="M9 22V12h6v10"></path>
+                </svg>
+              </div>
+            </div>
+            <div style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:22, fontWeight:700, color:theme==="light"?"#201b14":"#f0e8d8", marginBottom:8 }}>Ready to underwrite?</div>
+            <div style={{ fontFamily:"'Inter', sans-serif", fontSize:15, color:theme==="light"?"#6d6254":"#8a8174" }}>Enter a property address above to begin your analysis.</div>
           </div>
         )}
       </div>
