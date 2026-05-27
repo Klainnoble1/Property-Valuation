@@ -863,6 +863,38 @@ function ResultsMenu({ active, setActive, theme }) {
   );
 }
 
+function ToolNav({ active, setActive }) {
+  const tabs = [
+    ["lead", "Lead"],
+    ["deal", "Deal"],
+    ["confidence", "Confidence"],
+    ["actions", "Actions"],
+  ];
+  return (
+    <div className="app-header-actions" style={{ display:"flex", gap:6, alignItems:"center", flexWrap:"wrap" }}>
+      {tabs.map(([key, label]) => {
+        const selected = active === key;
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setActive(key)}
+            style={{
+              ...hdrBtn,
+              background:selected ? "linear-gradient(135deg,#c9a84c,#e8c97a)" : hdrBtn.background,
+              border:selected ? "none" : hdrBtn.border,
+              color:selected ? "#0c0e13" : hdrBtn.color,
+              fontWeight:800,
+            }}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function PipelinePanel({ value, onChange, theme }) {
   const t = toolTheme(theme);
   return (
@@ -1387,7 +1419,8 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
             <div style={{ width:7, height:7, borderRadius:"50%", background:apiKey?"#64c878":"#e07060", boxShadow:`0 0 6px ${apiKey?"#64c878":"#e07060"}80` }}/>
             <span style={{ fontSize:10, color:apiKey?"#64c878":"#e07060", fontFamily:"sans-serif" }}>{apiKey?"Data Connected":"No API Key"}</span>
           </div>
-          <button onClick={() => setShowHistory(true)} style={hdrBtn}>📁 History</button>
+          {R && <ToolNav active={activeResultTool} setActive={setActiveResultTool} />}
+          <button onClick={() => setShowHistory(true)} style={hdrBtn}>History</button>
           <button onClick={() => setShowSettings(true)} style={hdrBtn}>⚙ Settings</button>
         </div>
       </div>
