@@ -1277,7 +1277,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
           <div style={{ width:36, height:36, background:"linear-gradient(135deg,#c9a84c,#e8c97a)", borderRadius:9, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, boxShadow:"0 4px 16px rgba(201,168,76,.25)" }}>🏛</div>
           <div>
             <div style={{ fontSize:17, color:"#f0e8d8", letterSpacing:.3 }}>PropVal</div>
-            <div style={{ fontSize:9, color:"#5a5850", letterSpacing:"2px", textTransform:"uppercase", fontFamily:"sans-serif" }}>AI Property Valuation SaaS</div>
+            <div style={{ fontSize:9, color:"#5a5850", letterSpacing:"2px", textTransform:"uppercase", fontFamily:"sans-serif" }}>AI Property Valuation</div>
           </div>
         </div>
         <div className="app-header-actions" style={{ display:"flex", gap:8, alignItems:"center" }}>

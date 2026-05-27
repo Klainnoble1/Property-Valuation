@@ -43,7 +43,7 @@ function AuthScreen({ theme, setTheme }) {
             {theme === "dark" ? "Light mode" : "Dark mode"}
           </button>
         </div>
-        <div style={{ fontSize:11, letterSpacing:2, color:"#c9a84c", textTransform:"uppercase", marginBottom:8 }}>Property Valuation SaaS</div>
+        <div style={{ fontSize:11, letterSpacing:2, color:"#c9a84c", textTransform:"uppercase", marginBottom:8 }}>Property Valuation</div>
         <h1 style={styles.title}>{mode === "signin" ? "Sign in" : "Create account"}</h1>
         <p style={styles.copy}>Create polished valuation lead reports, save client history, and manage property analysis from one workspace.</p>
         <input style={styles.input} type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
