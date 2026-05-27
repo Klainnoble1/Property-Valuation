@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "./src/supabaseClient.js";
 
 // ── Storage keys ──────────────────────────────────────────────────────────────
@@ -556,7 +557,8 @@ function ScoreArc({ score }) {
         <text x={cx} y={cy+10} textAnchor="middle" fill="#5a5850" fontSize="9" fontFamily="sans-serif" letterSpacing="1">/100</text>
       </svg>
       <div style={{ fontSize:12, color, fontFamily:"sans-serif", marginTop:-4 }}>{label}</div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -574,7 +576,8 @@ function ValuationMeter({ value, low, high }) {
         <div style={{ position:"absolute", inset:0, background:"linear-gradient(90deg,#1a2a1a,rgba(201,168,76,.35),#2a1a1a)", borderRadius:6 }}/>
         <div style={{ position:"absolute", top:-4, left:`${pct}%`, transform:"translateX(-50%)", width:16, height:16, borderRadius:"50%", background:"#c9a84c", border:"2px solid #0c0e13", boxShadow:"0 0 10px rgba(201,168,76,.6)", zIndex:2 }}/>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -724,6 +727,20 @@ function SettingsModal({ onClose, user, theme, setTheme, onSignOut }) {
   const joined = user?.created_at ? new Date(user.created_at).toLocaleDateString() : "—";
   const lastSignIn = user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : "—";
   const plan = user?.user_metadata?.plan || user?.app_metadata?.plan || "Free";
+  const light = theme === "light";
+  const settingsPalette = {
+    overlay: light ? "rgba(32,27,20,.42)" : "rgba(0,0,0,.7)",
+    panel: light ? "#ffffff" : "#13161d",
+    panelBorder: light ? "#ded6c8" : "#2a2830",
+    title: light ? "#201b14" : "#f0e8d8",
+    muted: light ? "#6d6254" : "#5a5850",
+    inputBg: light ? "#fbf8f2" : "#0d0f14",
+    inputBorder: light ? "#d8cebd" : "#2a2830",
+    softBg: light ? "#fbf8f2" : "rgba(201,168,76,.05)",
+    softBorder: light ? "#eadfcf" : "rgba(201,168,76,.15)",
+    text: light ? "#31291f" : "#d8d0c0",
+    dangerBg: light ? "#fff7f5" : "#0d0f14",
+  };
 
   async function saveProfile() {
     setSaving(true);
@@ -741,13 +758,13 @@ function SettingsModal({ onClose, user, theme, setTheme, onSignOut }) {
     }
   }
 
-  return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.7)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }} onClick={onClose}>
-      <div style={{ background:"#13161d", border:"1px solid #2a2830", borderRadius:16, padding:28, width:"100%", maxWidth:540 }} onClick={e=>e.stopPropagation()}>
+  return createPortal(
+    <div style={{ position:"fixed", inset:0, background:settingsPalette.overlay, zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }} onClick={onClose}>
+      <div style={{ background:settingsPalette.panel, border:`1px solid ${settingsPalette.panelBorder}`, borderRadius:16, padding:28, width:"100%", maxWidth:540, boxShadow:light ? "0 24px 70px rgba(60,45,20,.18)" : "none" }} onClick={e=>e.stopPropagation()}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
           <div>
-            <div style={{ fontSize:16, color:"#f0e8d8" }}>User Settings</div>
-            <div style={{ fontSize:11, color:"#5a5850", fontFamily:"sans-serif", marginTop:3 }}>{user?.email}</div>
+            <div style={{ fontSize:16, color:settingsPalette.title }}>User Settings</div>
+            <div style={{ fontSize:11, color:settingsPalette.muted, fontFamily:"sans-serif", marginTop:3 }}>{user?.email}</div>
           </div>
           <button onClick={onClose} style={{ background:"none", border:"none", color:"#5a5850", cursor:"pointer", fontSize:18 }}>✕</button>
         </div>
@@ -759,9 +776,9 @@ function SettingsModal({ onClose, user, theme, setTheme, onSignOut }) {
             onChange={(e) => setFullName(e.target.value)}
             type="text"
             placeholder="Full name"
-            style={{ width:"100%", background:"#0d0f14", border:"1px solid #2a2830", borderRadius:9, padding:"11px 14px", color:"#f0e8d8", fontSize:14, fontFamily:"sans-serif", outline:"none", boxSizing:"border-box" }}
+            style={{ width:"100%", background:settingsPalette.inputBg, border:`1px solid ${settingsPalette.inputBorder}`, borderRadius:9, padding:"11px 14px", color:settingsPalette.title, fontSize:14, fontFamily:"sans-serif", outline:"none", boxSizing:"border-box" }}
             onFocus={e=>e.target.style.borderColor="#c9a84c"}
-            onBlur={e=>e.target.style.borderColor="#2a2830"}
+            onBlur={e=>e.target.style.borderColor=settingsPalette.inputBorder}
           />
         </div>
 
@@ -772,12 +789,12 @@ function SettingsModal({ onClose, user, theme, setTheme, onSignOut }) {
           <MiniStat label="Last sign in" value={lastSignIn} />
         </div>
 
-        <div style={{ background:"rgba(201,168,76,.05)", border:"1px solid rgba(201,168,76,.15)", borderRadius:10, padding:"12px 14px", marginBottom:18 }}>
-          <div style={{ color:"#c9a84c", marginBottom:10, fontWeight:"bold", fontSize:11, fontFamily:"sans-serif" }}>Preferences</div>
+        <div style={{ background:settingsPalette.softBg, border:`1px solid ${settingsPalette.softBorder}`, borderRadius:10, padding:"12px 14px", marginBottom:18 }}>
+          <div style={{ color:"#9b7624", marginBottom:10, fontWeight:"bold", fontSize:11, fontFamily:"sans-serif" }}>Preferences</div>
           <button
             type="button"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            style={{ width:"100%", padding:"10px 12px", background:"#0d0f14", border:"1px solid #2a2830", borderRadius:9, color:"#d8d0c0", fontFamily:"sans-serif", cursor:"pointer", textAlign:"left" }}
+            style={{ width:"100%", padding:"10px 12px", background:settingsPalette.inputBg, border:`1px solid ${settingsPalette.inputBorder}`, borderRadius:9, color:settingsPalette.text, fontFamily:"sans-serif", cursor:"pointer", textAlign:"left" }}
           >
             Switch to {theme === "dark" ? "light" : "dark"} mode
           </button>
@@ -787,7 +804,7 @@ function SettingsModal({ onClose, user, theme, setTheme, onSignOut }) {
           <button onClick={saveProfile} disabled={saving} style={{ flex:1, padding:"11px", background:"linear-gradient(135deg,#c9a84c,#e8c97a)", border:"none", borderRadius:9, color:"#0c0e13", fontFamily:"sans-serif", fontWeight:"bold", fontSize:13, cursor:"pointer" }}>
             {saving ? "Saving..." : "Save settings"}
           </button>
-          <button onClick={onSignOut} style={{ padding:"11px 14px", background:"#0d0f14", border:"1px solid rgba(224,112,96,.35)", borderRadius:9, color:"#e07060", fontFamily:"sans-serif", fontWeight:"bold", fontSize:13, cursor:"pointer" }}>
+          <button onClick={onSignOut} style={{ padding:"11px 14px", background:settingsPalette.dangerBg, border:"1px solid rgba(224,112,96,.35)", borderRadius:9, color:"#b84c3d", fontFamily:"sans-serif", fontWeight:"bold", fontSize:13, cursor:"pointer" }}>
             Sign out
           </button>
         </div>
@@ -976,15 +993,24 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
     }
   }
 
-  function loadFromHistory(item) {
+  async function loadFromHistory(item) {
     setQuery(item.address);
     if (item.report) {
       const cleanReport = stripRehab(item.report);
       setBaseResult(cleanReport);
       setResult(item.report);
       setRehabStyle(item.report.rehab?.styleKey || DEFAULT_REHAB_KEY);
-      setZillowRaw(item.zillowRaw || null);
-      hydratePhotos(item.zillowRaw || null);
+      const raw = item.zillowRaw || null;
+      setZillowRaw(raw);
+      hydratePhotos(raw);
+      if (!raw) {
+        fetchCachedAnalysis(item.address).then((cached) => {
+          if (cached?.zillowRaw) {
+            setZillowRaw(cached.zillowRaw);
+            hydratePhotos(cached.zillowRaw);
+          }
+        }).catch(() => null);
+      }
     }
   }
 
