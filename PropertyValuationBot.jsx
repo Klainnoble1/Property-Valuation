@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { supabase } from "./src/supabaseClient.js";
+import { LeadsPage, DealsPage, ConfidencePage, ActionsPage } from "./src/Pages.jsx";
 
 // ── Storage keys ──────────────────────────────────────────────────────────────
 const RK = "propval:rapidapi_key";
@@ -863,10 +864,11 @@ function ResultsMenu({ active, setActive, theme }) {
   );
 }
 
-function ToolNav({ active, setActive }) {
+function AppNav({ active, setActive }) {
   const tabs = [
-    ["lead", "Lead"],
-    ["deal", "Deal"],
+    ["search", "Search"],
+    ["leads", "Leads"],
+    ["deals", "Deals"],
     ["confidence", "Confidence"],
     ["actions", "Actions"],
   ];
@@ -881,10 +883,11 @@ function ToolNav({ active, setActive }) {
             onClick={() => setActive(key)}
             style={{
               ...hdrBtn,
-              background:selected ? "linear-gradient(135deg,#c9a84c,#e8c97a)" : hdrBtn.background,
-              border:selected ? "none" : hdrBtn.border,
+              background:selected ? "linear-gradient(135deg,#c9a84c,#e8c97a)" : "rgba(255,255,255,0.03)",
+              border:selected ? "1px solid rgba(201,168,76,.5)" : hdrBtn.border,
               color:selected ? "#0c0e13" : hdrBtn.color,
-              fontWeight:800,
+              fontWeight:selected ? 800 : 500,
+              boxShadow:selected ? "0 4px 12px rgba(201,168,76,.2)" : "none",
             }}
           >
             {label}
@@ -1135,6 +1138,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
   const [deal, setDeal] = useState(defaultDeal);
   const [pipelineStatus, setPipelineStatus] = useState("New Lead");
   const [activeResultTool, setActiveResultTool] = useState("lead");
+  const [activePage, setActivePage] = useState("search");
   const [rerunningAnalysis, setRerunningAnalysis] = useState(false);
   const [lastSavedReportId, setLastSavedReportId] = useState(null);
   const [shareMessage, setShareMessage] = useState("");
@@ -1297,6 +1301,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
   }
 
   async function loadFromHistory(item) {
+    setActivePage("search");
     setQuery(item.address);
     if (item.report) {
       const cleanReport = stripRehab(item.report);
@@ -1380,12 +1385,12 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
   const zDelta = Z?.value && V?.mid ? Math.round(((V.mid - Z.value)/Z.value)*100*10)/10 : null;
 
   return (
-    <div style={{ minHeight:"100vh", background:"#0c0e13", color:"#e8e0d0", fontFamily:"'Georgia',serif" }}>
+    <div style={{ minHeight:"100vh", background:theme==="light"?"#fbf8f2":"radial-gradient(circle at top right, #161a22, #0c0e13)", color:theme==="light"?"#201b14":"#e8e0d0", fontFamily:"'Inter', sans-serif" }}>
       <style>{`
         @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
         @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:.4} }
         @keyframes spin   { to{transform:rotate(360deg)} }
-        input::placeholder { color:#2a2820; }
+        input::placeholder { color:#8a8174; }
         .search-stage { min-height: calc(100vh - 96px); display:flex; flex-direction:column; justify-content:center; }
         @media (max-width: 720px) {
           .app-header { flex-direction: column; align-items: stretch !important; gap: 14px; }
@@ -1405,12 +1410,12 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
       `}</style>
 
       {/* ── Header ── */}
-      <div className="app-header" style={{ borderBottom:"1px solid #1a1c22", padding:"18px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+      <div className="app-header" style={{ borderBottom:theme==="light"?"1px solid #e2ddd5":"1px solid rgba(255,255,255,0.06)", padding:"18px 24px", display:"flex", alignItems:"center", justifyContent:"space-between", background:theme==="light"?"#ffffff":"rgba(12,14,19,0.8)", backdropFilter:"blur(12px)", position:"sticky", top:0, zIndex:100 }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <div style={{ width:36, height:36, background:"linear-gradient(135deg,#c9a84c,#e8c97a)", borderRadius:9, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, boxShadow:"0 4px 16px rgba(201,168,76,.25)" }}>🏛</div>
           <div>
-            <div style={{ fontSize:17, color:"#f0e8d8", letterSpacing:.3 }}>PropVal</div>
-            <div style={{ fontSize:9, color:"#8a8174", letterSpacing:"2px", textTransform:"uppercase", fontFamily:"sans-serif" }}>AI Property Valuation</div>
+            <div style={{ fontSize:17, color:theme==="light"?"#201b14":"#f0e8d8", letterSpacing:.3, fontWeight:700, fontFamily:"'Plus Jakarta Sans', sans-serif" }}>PropVal</div>
+            <div style={{ fontSize:9, color:"#8a8174", letterSpacing:"2px", textTransform:"uppercase", fontFamily:"'Inter', sans-serif", fontWeight:600 }}>AI Property Valuation</div>
           </div>
         </div>
         <div className="app-header-actions" style={{ display:"flex", gap:8, alignItems:"center" }}>
@@ -1419,39 +1424,44 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
             <div style={{ width:7, height:7, borderRadius:"50%", background:apiKey?"#64c878":"#e07060", boxShadow:`0 0 6px ${apiKey?"#64c878":"#e07060"}80` }}/>
             <span style={{ fontSize:10, color:apiKey?"#64c878":"#e07060", fontFamily:"sans-serif" }}>{apiKey?"Data Connected":"No API Key"}</span>
           </div>
-          {R && <ToolNav active={activeResultTool} setActive={setActiveResultTool} />}
+          <AppNav active={activePage} setActive={setActivePage} />
           <button onClick={() => setShowHistory(true)} style={hdrBtn}>History</button>
           <button onClick={() => setShowSettings(true)} style={hdrBtn}>⚙ Settings</button>
         </div>
       </div>
 
-      <div className={!R && !loading ? "search-stage" : ""} style={{ maxWidth:820, margin:"0 auto", padding:R || loading ? "36px 20px 0" : "0 20px" }}>
+      {activePage === "leads" && <LeadsPage user={user} theme={theme} onLoadReport={loadFromHistory} />}
+      {activePage === "deals" && <DealsPage user={user} theme={theme} onLoadReport={loadFromHistory} />}
+      {activePage === "confidence" && <ConfidencePage user={user} theme={theme} onLoadReport={loadFromHistory} />}
+      {activePage === "actions" && <ActionsPage user={user} theme={theme} onLoadReport={loadFromHistory} />}
+
+      <div style={{ display: activePage === "search" ? "block" : "none" }}>
+        <div className={!R && !loading ? "search-stage" : ""} style={{ maxWidth:820, margin:"0 auto", padding:R || loading ? "36px 20px 0" : "0 20px" }}>
 
         {/* ── Hero text ── */}
         <div style={{ textAlign:"center", marginBottom:28 }}>
-          <h1 style={{ fontSize:"clamp(34px,6vw,58px)", fontWeight:800, margin:"0 0 12px", color:"#f8f0df", lineHeight:1.02, fontFamily:"sans-serif" }}>Enter any property address</h1>
-          <p style={{ margin:"0 auto", maxWidth:660, fontSize:16, color:"#d0c8b8", fontFamily:"sans-serif", lineHeight:1.65, fontWeight:600 }}>
+          <h1 style={{ fontSize:"clamp(34px,6vw,58px)", fontWeight:800, margin:"0 0 12px", color:theme==="light"?"#111":"#f8f0df", lineHeight:1.02, fontFamily:"'Plus Jakarta Sans', sans-serif" }}>Enter any property address</h1>
+          <p style={{ margin:"0 auto", maxWidth:660, fontSize:16, color:theme==="light"?"#555":"#a09888", fontFamily:"'Inter', sans-serif", lineHeight:1.65, fontWeight:500 }}>
             Turn any address into a polished valuation lead report with live property data, AI analysis, and saved client history.
           </p>
         </div>
 
         {/* ── Search bar ── */}
-        <div className="search-row" style={{ display:"flex", gap:12, marginBottom:16, background:"#11151d", border:"1px solid #303541", borderRadius:16, padding:8, boxShadow:"0 18px 50px rgba(0,0,0,.22)" }}>
+        <div className="search-row" style={{ display:"flex", gap:12, marginBottom:16, background:theme==="light"?"#fff":"rgba(255,255,255,0.03)", border:theme==="light"?"1px solid #e2ddd5":"1px solid rgba(255,255,255,0.08)", borderRadius:16, padding:8, boxShadow:theme==="light"?"0 18px 50px rgba(0,0,0,.05)":"0 18px 50px rgba(0,0,0,.22)", backdropFilter:"blur(12px)" }}>
           <input
             value={query}
             onChange={e=>setQuery(e.target.value)}
             onKeyDown={e=>e.key==="Enter"&&analyze()}
             placeholder="e.g. 4217 Oak Trail Dr, Austin, TX 78745"
-            style={{ flex:1, background:"#171b24", border:"1px solid #3a4050", borderRadius:12, padding:"18px 20px", color:"#f8f0df", fontSize:17, fontFamily:"sans-serif", fontWeight:650, outline:"none", transition:"border-color .2s" }}
-            onFocus={e=>e.target.style.borderColor="#c9a84c"}
-            onBlur={e=>e.target.style.borderColor="#222530"}
+            style={{ flex:1, background:"transparent", border:"none", padding:"18px 20px", color:theme==="light"?"#111":"#f8f0df", fontSize:17, fontFamily:"'Inter', sans-serif", fontWeight:500, outline:"none" }}
           />
           <button onClick={analyze} disabled={loading||!query.trim()} style={{
             padding:"18px 28px", borderRadius:12, border:"none",
             cursor:loading||!query.trim()?"not-allowed":"pointer",
-            background:loading||!query.trim()?"#1a1c22":"linear-gradient(135deg,#c9a84c,#e8c97a)",
-            color:loading||!query.trim()?"#3a3830":"#0c0e13",
-            fontFamily:"sans-serif", fontWeight:800, fontSize:15, letterSpacing:"1px", transition:"all .2s", whiteSpace:"nowrap",
+            background:loading||!query.trim()?(theme==="light"?"#f0e8d8":"rgba(255,255,255,0.05)"):"linear-gradient(135deg,#c9a84c,#e8c97a)",
+            color:loading||!query.trim()?(theme==="light"?"#aaa":"#5a5850"):"#0c0e13",
+            fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:700, fontSize:15, letterSpacing:"0.5px", transition:"all .2s", whiteSpace:"nowrap",
+            boxShadow:!loading&&query.trim()?"0 4px 14px rgba(201,168,76,.3)":"none"
           }}>
             {loading?"Analyzing…":"Analyze →"}
           </button>
@@ -1730,6 +1740,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
             <div style={{ fontFamily:"sans-serif", fontSize:18, fontWeight:800, color:"#f0e8d8" }}>Enter a property address above to begin</div>
           </div>
         )}
+      </div>
       </div>
 
       {/* Modals */}
