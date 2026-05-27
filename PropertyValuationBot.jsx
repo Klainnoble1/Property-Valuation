@@ -1255,11 +1255,13 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
         @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:.4} }
         @keyframes spin   { to{transform:rotate(360deg)} }
         input::placeholder { color:#2a2820; }
+        .search-stage { min-height: calc(100vh - 96px); display:flex; flex-direction:column; justify-content:center; }
         @media (max-width: 720px) {
           .app-header { flex-direction: column; align-items: stretch !important; gap: 14px; }
           .app-header-actions { flex-wrap: wrap; }
           .search-row { flex-direction: column; }
           .search-row input, .search-row button { width: 100%; box-sizing: border-box; }
+          .search-stage { min-height: auto; padding-top: 28px; }
           .photo-grid { grid-template-columns: 1fr !important; }
           .hero-card-row, .property-title-row { flex-direction: column; align-items: flex-start !important; }
           .hero-card-row > div { text-align: left !important; }
@@ -1291,33 +1293,33 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
         </div>
       </div>
 
-      <div style={{ maxWidth:740, margin:"0 auto", padding:"36px 20px 0" }}>
+      <div className={!R && !loading ? "search-stage" : ""} style={{ maxWidth:820, margin:"0 auto", padding:R || loading ? "36px 20px 0" : "0 20px" }}>
 
         {/* ── Hero text ── */}
         <div style={{ textAlign:"center", marginBottom:28 }}>
-          <h1 style={{ fontSize:26, fontWeight:"normal", margin:"0 0 8px", color:"#f0e8d8" }}>Enter any property address</h1>
-          <p style={{ margin:0, fontSize:13, color:"#9a9080", fontFamily:"sans-serif" }}>
+          <h1 style={{ fontSize:"clamp(34px,6vw,58px)", fontWeight:800, margin:"0 0 12px", color:"#f8f0df", lineHeight:1.02, fontFamily:"sans-serif" }}>Enter any property address</h1>
+          <p style={{ margin:"0 auto", maxWidth:660, fontSize:16, color:"#d0c8b8", fontFamily:"sans-serif", lineHeight:1.65, fontWeight:600 }}>
             Turn any address into a polished valuation lead report with live property data, AI analysis, and saved client history.
           </p>
         </div>
 
         {/* ── Search bar ── */}
-        <div className="search-row" style={{ display:"flex", gap:10, marginBottom:16 }}>
+        <div className="search-row" style={{ display:"flex", gap:12, marginBottom:16, background:"#11151d", border:"1px solid #303541", borderRadius:16, padding:8, boxShadow:"0 18px 50px rgba(0,0,0,.22)" }}>
           <input
             value={query}
             onChange={e=>setQuery(e.target.value)}
             onKeyDown={e=>e.key==="Enter"&&analyze()}
             placeholder="e.g. 4217 Oak Trail Dr, Austin, TX 78745"
-            style={{ flex:1, background:"#13161d", border:"1px solid #222530", borderRadius:11, padding:"14px 18px", color:"#f0e8d8", fontSize:15, fontFamily:"'Georgia',serif", outline:"none", transition:"border-color .2s" }}
+            style={{ flex:1, background:"#171b24", border:"1px solid #3a4050", borderRadius:12, padding:"18px 20px", color:"#f8f0df", fontSize:17, fontFamily:"sans-serif", fontWeight:650, outline:"none", transition:"border-color .2s" }}
             onFocus={e=>e.target.style.borderColor="#c9a84c"}
             onBlur={e=>e.target.style.borderColor="#222530"}
           />
           <button onClick={analyze} disabled={loading||!query.trim()} style={{
-            padding:"14px 24px", borderRadius:11, border:"none",
+            padding:"18px 28px", borderRadius:12, border:"none",
             cursor:loading||!query.trim()?"not-allowed":"pointer",
             background:loading||!query.trim()?"#1a1c22":"linear-gradient(135deg,#c9a84c,#e8c97a)",
             color:loading||!query.trim()?"#3a3830":"#0c0e13",
-            fontFamily:"sans-serif", fontWeight:"bold", fontSize:13, letterSpacing:"1px", transition:"all .2s", whiteSpace:"nowrap",
+            fontFamily:"sans-serif", fontWeight:800, fontSize:15, letterSpacing:"1px", transition:"all .2s", whiteSpace:"nowrap",
           }}>
             {loading?"Analyzing…":"Analyze →"}
           </button>
@@ -1350,7 +1352,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
         )}
 
         {/* ── Results ── */}
-        <div className="print-hide" style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10, marginBottom:14, color:"#9a9080", fontFamily:"sans-serif", fontSize:12 }}>
+        <div className="print-hide" style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:10, marginBottom:14, color:"#c0b8a8", fontFamily:"sans-serif", fontSize:13, fontWeight:700 }}>
           <span>Free plan searches this month: {monthlySearches}/{FREE_SEARCH_LIMIT}</span>
           {shareMessage && <span style={{ color:"#64c878" }}>{shareMessage}</span>}
         </div>
@@ -1590,9 +1592,9 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
 
         {/* Empty state */}
         {!R && !loading && (
-          <div style={{ textAlign:"center", padding:"60px 0", color:"#2a2820" }}>
-            <div style={{ fontSize:48, marginBottom:10 }}>🏠</div>
-            <div style={{ fontFamily:"sans-serif", fontSize:13 }}>Enter a property address above to begin</div>
+          <div style={{ textAlign:"center", padding:"28px 0 10px", color:"#d0c8b8" }}>
+            <div style={{ fontSize:58, marginBottom:12 }}>??</div>
+            <div style={{ fontFamily:"sans-serif", fontSize:18, fontWeight:800, color:"#f0e8d8" }}>Enter a property address above to begin</div>
           </div>
         )}
       </div>
