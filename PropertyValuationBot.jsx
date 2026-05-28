@@ -1270,6 +1270,8 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
   const [error,       setError]       = useState(null);
   const [showSettings,setShowSettings]= useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const userPlan = String(user?.user_metadata?.plan || user?.app_metadata?.plan || "free").toLowerCase();
+  const isPremium = userPlan === "premium";
 
   useEffect(() => {
     if (!supabase || !user?.id) return;
@@ -1398,8 +1400,8 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
 
   async function analyze() {
     if (!query.trim() || loading) return;
-    if (monthlySearches >= FREE_SEARCH_LIMIT) {
-      setError(`Free plan limit reached (${FREE_SEARCH_LIMIT} searches this month). Upgrade billing can be enabled next.`);
+    if (!isPremium && monthlySearches >= FREE_SEARCH_LIMIT) {
+      setError(`Free plan limit reached (${FREE_SEARCH_LIMIT} searches this month). Upgrade to premium for unlimited searches.`);
       return;
     }
     setLoading(true); setBaseResult(null); setResult(null); setZillowRaw(null); setPropertyPhotos([]); setError(null); setStep(0);
@@ -1648,7 +1650,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
 
         {/* ── Results ── */}
         <div className="print-hide" style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:10, marginBottom:14, color:"#c0b8a8", fontFamily:"sans-serif", fontSize:13, fontWeight:700 }}>
-          <span>Free plan searches this month: {monthlySearches}/{FREE_SEARCH_LIMIT}</span>
+          <span>{isPremium ? "Premium plan: unlimited searches" : `Free plan searches this month: ${monthlySearches}/${FREE_SEARCH_LIMIT}`}</span>
         </div>
 
         {R && (
