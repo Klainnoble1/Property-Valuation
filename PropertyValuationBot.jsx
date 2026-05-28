@@ -703,24 +703,51 @@ function Badge({ children, tone = "neutral", sm }) {
   return <span style={{ fontSize: sm?9:11, padding: sm?"2px 6px":"3px 10px", borderRadius:20, background:bg, color, border:`1px solid ${border}`, fontFamily:"sans-serif", whiteSpace:"nowrap" }}>{children}</span>;
 }
 
-function Divider() { return <div style={{ height:1, background:"#1a1c22", margin:"2px 0" }} />; }
+function appTheme(theme) {
+  const light = theme === "light";
+  return {
+    page: light ? "#fbf8f2" : "#0c0e13",
+    pageGradient: light ? "#fbf8f2" : "radial-gradient(circle at top right, #161a22, #0c0e13)",
+    headerBg: light ? "#ffffff" : "rgba(12,14,19,0.8)",
+    panel: light ? "#ffffff" : "#13161d",
+    panelAlt: light ? "#fbf8f2" : "#0d0f14",
+    panelSoft: light ? "#fffaf0" : "rgba(255,255,255,0.03)",
+    border: light ? "#e2ddd5" : "#222530",
+    borderSoft: light ? "#eee4d4" : "#1a1c22",
+    text: light ? "#201b14" : "#f0e8d8",
+    heading: light ? "#111111" : "#f8f0df",
+    muted: light ? "#6d6254" : "#a09888",
+    sub: light ? "#8b7c68" : "#6a6258",
+    faint: light ? "#9b8c78" : "#5a5850",
+    gold: "#c9a84c",
+    goldText: light ? "#8a6419" : "#e8c97a",
+    darkOnGold: "#0c0e13",
+    shadow: light ? "0 18px 50px rgba(70,52,28,.08)" : "0 18px 50px rgba(0,0,0,.22)",
+  };
+}
 
-function Row({ label, value, right, sub, last }) {
+function Divider({ theme }) {
+  return <div style={{ height:1, background:appTheme(theme).borderSoft, margin:"2px 0" }} />;
+}
+
+function Row({ label, value, right, sub, last, theme }) {
+  const ui = appTheme(theme);
   return (
     <>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"11px 0" }}>
         <div>
-          <div style={{ fontSize:13, color:"#b0a898", fontFamily:"sans-serif" }}>{label}</div>
-          {sub && <div style={{ fontSize:10, color:"#4a4840", fontFamily:"sans-serif", marginTop:2 }}>{sub}</div>}
+          <div style={{ fontSize:13, color:ui.muted, fontFamily:"sans-serif" }}>{label}</div>
+          {sub && <div style={{ fontSize:10, color:ui.faint, fontFamily:"sans-serif", marginTop:2 }}>{sub}</div>}
         </div>
-        {right || <div style={{ fontSize:14, color:"#f0e8d8", fontFamily:"sans-serif" }}>{value}</div>}
+        {right || <div style={{ fontSize:14, color:ui.text, fontFamily:"sans-serif" }}>{value}</div>}
       </div>
-      {!last && <Divider />}
+      {!last && <Divider theme={theme} />}
     </>
   );
 }
 
-function ScoreArc({ score }) {
+function ScoreArc({ score, theme }) {
+  const ui = appTheme(theme);
   const r=54, cx=70, cy=70, circ=Math.PI*r;
   const filled=(score/100)*circ;
   const color=score>=70?"#64c878":score>=45?"#c9a84c":"#e07060";
@@ -728,52 +755,54 @@ function ScoreArc({ score }) {
   return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center" }}>
       <svg width="140" height="80" viewBox="0 0 140 80">
-        <path d={`M${cx-r} ${cy} A${r} ${r} 0 0 1 ${cx+r} ${cy}`} fill="none" stroke="#1e2028" strokeWidth="10" strokeLinecap="round"/>
+        <path d={`M${cx-r} ${cy} A${r} ${r} 0 0 1 ${cx+r} ${cy}`} fill="none" stroke={ui.borderSoft} strokeWidth="10" strokeLinecap="round"/>
         <path d={`M${cx-r} ${cy} A${r} ${r} 0 0 1 ${cx+r} ${cy}`} fill="none" stroke={color} strokeWidth="10" strokeLinecap="round" strokeDasharray={`${filled} ${circ}`} style={{ filter:`drop-shadow(0 0 6px ${color}80)` }}/>
         <text x={cx} y={cy-6} textAnchor="middle" fill={color} fontSize="22" fontFamily="Georgia,serif" fontWeight="bold">{score}</text>
-        <text x={cx} y={cy+10} textAnchor="middle" fill="#5a5850" fontSize="9" fontFamily="sans-serif" letterSpacing="1">/100</text>
+        <text x={cx} y={cy+10} textAnchor="middle" fill={ui.faint} fontSize="9" fontFamily="sans-serif" letterSpacing="1">/100</text>
       </svg>
       <div style={{ fontSize:12, color, fontFamily:"sans-serif", marginTop:-4 }}>{label}</div>
     </div>
   );
 }
 
-function ValuationMeter({ value, low, high }) {
+function ValuationMeter({ value, low, high, theme }) {
+  const ui = appTheme(theme);
   if (!value) return null;
   const range = (high||value*1.06) - (low||value*0.94);
   const mid = (value - (low||value*0.94)) / (range||1);
   const pct = Math.min(95, Math.max(5, mid*100));
   return (
     <div>
-      <div style={{ display:"flex", justifyContent:"space-between", fontSize:10, color:"#5a5850", fontFamily:"sans-serif", marginBottom:5 }}>
-        <span>{fmtK(low)}</span><span style={{ color:"#c9a84c" }}>Estimate</span><span>{fmtK(high)}</span>
+      <div style={{ display:"flex", justifyContent:"space-between", fontSize:10, color:ui.faint, fontFamily:"sans-serif", marginBottom:5 }}>
+        <span>{fmtK(low)}</span><span style={{ color:ui.gold }}>Estimate</span><span>{fmtK(high)}</span>
       </div>
-      <div style={{ position:"relative", height:8, background:"#1a1c22", borderRadius:6 }}>
-        <div style={{ position:"absolute", inset:0, background:"linear-gradient(90deg,#1a2a1a,rgba(201,168,76,.35),#2a1a1a)", borderRadius:6 }}/>
-        <div style={{ position:"absolute", top:-4, left:`${pct}%`, transform:"translateX(-50%)", width:16, height:16, borderRadius:"50%", background:"#c9a84c", border:"2px solid #0c0e13", boxShadow:"0 0 10px rgba(201,168,76,.6)", zIndex:2 }}/>
+      <div style={{ position:"relative", height:8, background:ui.borderSoft, borderRadius:6 }}>
+        <div style={{ position:"absolute", inset:0, background:theme === "light" ? "linear-gradient(90deg,#d7eddd,rgba(201,168,76,.35),#f0d7d2)" : "linear-gradient(90deg,#1a2a1a,rgba(201,168,76,.35),#2a1a1a)", borderRadius:6 }}/>
+        <div style={{ position:"absolute", top:-4, left:`${pct}%`, transform:"translateX(-50%)", width:16, height:16, borderRadius:"50%", background:ui.gold, border:`2px solid ${ui.page}`, boxShadow:"0 0 10px rgba(201,168,76,.6)", zIndex:2 }}/>
       </div>
     </div>
   );
 }
 
-function PriceTimeline({ history }) {
+function PriceTimeline({ history, theme }) {
+  const ui = appTheme(theme);
   if (!history?.length) return null;
   const sorted = [...history].sort((a,b) => new Date(a.date)-new Date(b.date));
   const eventColor = (e) => e==="Sold"?"#64c878":e?.includes("Price")?"#c9a84c":"#6080c0";
   return (
     <div style={{ position:"relative", paddingLeft:20 }}>
-      <div style={{ position:"absolute", left:7, top:0, bottom:0, width:1, background:"#1e2028" }}/>
+      <div style={{ position:"absolute", left:7, top:0, bottom:0, width:1, background:ui.borderSoft }}/>
       {sorted.map((h,i) => (
         <div key={i} style={{ position:"relative", paddingBottom:14, paddingLeft:16 }}>
-          <div style={{ position:"absolute", left:-6, top:4, width:10, height:10, borderRadius:"50%", background:eventColor(h.event), border:"2px solid #0c0e13", boxShadow:`0 0 6px ${eventColor(h.event)}60` }}/>
+          <div style={{ position:"absolute", left:-6, top:4, width:10, height:10, borderRadius:"50%", background:eventColor(h.event), border:`2px solid ${ui.page}`, boxShadow:`0 0 6px ${eventColor(h.event)}60` }}/>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <div>
-              <span style={{ fontSize:13, color:"#d0c8b8", fontFamily:"sans-serif" }}>{h.event}</span>
-              {h.source && <span style={{ fontSize:10, color:"#4a4840", fontFamily:"sans-serif", marginLeft:6 }}>via {h.source}</span>}
+              <span style={{ fontSize:13, color:ui.text, fontFamily:"sans-serif" }}>{h.event}</span>
+              {h.source && <span style={{ fontSize:10, color:ui.faint, fontFamily:"sans-serif", marginLeft:6 }}>via {h.source}</span>}
             </div>
             <div style={{ textAlign:"right" }}>
               <div style={{ fontSize:14, color:eventColor(h.event), fontFamily:"sans-serif" }}>{h.price ? fmtK(h.price) : "—"}</div>
-              <div style={{ fontSize:10, color:"#4a4840", fontFamily:"sans-serif" }}>{h.date?.slice(0,10)}</div>
+              <div style={{ fontSize:10, color:ui.faint, fontFamily:"sans-serif" }}>{h.date?.slice(0,10)}</div>
             </div>
           </div>
         </div>
@@ -783,11 +812,12 @@ function PriceTimeline({ history }) {
 }
 
 // ── Settings Modal ─────────────────────────────────────────────────────────────
-function RehabSelector({ value, onChange }) {
+function RehabSelector({ value, onChange, theme }) {
+  const ui = appTheme(theme);
   return (
-    <div style={{ background:"#13161d", border:"1px solid #222530", borderRadius:12, padding:"14px", marginBottom:16 }}>
-      <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:"#c9a84c", fontFamily:"sans-serif", marginBottom:3 }}>Rehab Style</div>
-      <div style={{ fontSize:12, color:"#6a6258", fontFamily:"sans-serif", marginBottom:10 }}>Choose the renovation scope before running the valuation.</div>
+    <div style={{ background:ui.panel, border:`1px solid ${ui.border}`, borderRadius:12, padding:"14px", marginBottom:16 }}>
+      <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:ui.goldText, fontFamily:"sans-serif", marginBottom:3 }}>Rehab Style</div>
+      <div style={{ fontSize:12, color:ui.sub, fontFamily:"sans-serif", marginBottom:10 }}>Choose the renovation scope before running the valuation.</div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))", gap:8 }}>
         {Object.values(REHAB_STYLES).map((style) => {
           const active = value === style.key;
@@ -798,17 +828,17 @@ function RehabSelector({ value, onChange }) {
               type="button"
               style={{
                 textAlign:"left",
-                border:active ? "1px solid rgba(201,168,76,.65)" : "1px solid #222530",
-                background:active ? "rgba(201,168,76,.1)" : "#0d0f14",
+                border:active ? "1px solid rgba(201,168,76,.65)" : `1px solid ${ui.border}`,
+                background:active ? "rgba(201,168,76,.1)" : ui.panelAlt,
                 borderRadius:9,
                 padding:"10px 11px",
                 cursor:"pointer",
                 minHeight:88,
               }}
             >
-              <div style={{ color:active ? "#e8c97a" : "#f0e8d8", fontSize:12, fontFamily:"sans-serif", fontWeight:"bold", marginBottom:6 }}>{style.shortLabel}</div>
-              <div style={{ color:"#6a6258", fontSize:10, fontFamily:"sans-serif", lineHeight:1.45 }}>{style.timeline} / {style.risk} risk</div>
-              <div style={{ color:"#4a4840", fontSize:10, fontFamily:"sans-serif", marginTop:5 }}>
+              <div style={{ color:active ? ui.goldText : ui.text, fontSize:12, fontFamily:"sans-serif", fontWeight:"bold", marginBottom:6 }}>{style.shortLabel}</div>
+              <div style={{ color:ui.sub, fontSize:10, fontFamily:"sans-serif", lineHeight:1.45 }}>{style.timeline} / {style.risk} risk</div>
+              <div style={{ color:ui.faint, fontSize:10, fontFamily:"sans-serif", marginTop:5 }}>
                 {style.budget[1] ? `${fmtK(style.budget[0])}-${fmtK(style.budget[1])}` : "No ARV"}
               </div>
             </button>
@@ -819,39 +849,41 @@ function RehabSelector({ value, onChange }) {
   );
 }
 
-function RehabSummary({ rehab }) {
+function RehabSummary({ rehab, theme }) {
   if (!rehab) return null;
+  const ui = appTheme(theme);
   const hasBudget = Number(rehab.budgetHigh) > 0;
   return (
-    <div style={{ background:"#13161d", border:"1px solid #222530", borderRadius:14, padding:"22px 24px", marginBottom:14 }}>
-      <SectionLabel>Rehab Scope</SectionLabel>
+    <div style={{ background:ui.panel, border:`1px solid ${ui.border}`, borderRadius:14, padding:"22px 24px", marginBottom:14 }}>
+      <SectionLabel theme={theme}>Rehab Scope</SectionLabel>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:16, marginBottom:12 }}>
         <div>
-          <div style={{ fontSize:19, color:"#f0e8d8", marginBottom:5 }}>{rehab.label}</div>
-          <div style={{ fontSize:12, color:"#6a6258", fontFamily:"sans-serif", lineHeight:1.6 }}>{rehab.summary}</div>
+          <div style={{ fontSize:19, color:ui.text, marginBottom:5 }}>{rehab.label}</div>
+          <div style={{ fontSize:12, color:ui.sub, fontFamily:"sans-serif", lineHeight:1.6 }}>{rehab.summary}</div>
         </div>
         <Badge tone={rehab.risk === "High" ? "red" : rehab.risk === "Moderate" ? "gold" : "green"}>{rehab.risk} Risk</Badge>
       </div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))", gap:8, marginBottom:14 }}>
-        <MiniStat label="Budget" value={hasBudget ? `${fmtK(rehab.budgetLow)}-${fmtK(rehab.budgetHigh)}` : "None"} />
-        <MiniStat label="Timeline" value={rehab.timeline} />
-        <MiniStat label="Permits" value={rehab.permits} />
-        <MiniStat label="ARV" value={rehab.afterRepairValue ? fmtK(rehab.afterRepairValue) : "Not applicable"} />
+        <MiniStat label="Budget" value={hasBudget ? `${fmtK(rehab.budgetLow)}-${fmtK(rehab.budgetHigh)}` : "None"} theme={theme} />
+        <MiniStat label="Timeline" value={rehab.timeline} theme={theme} />
+        <MiniStat label="Permits" value={rehab.permits} theme={theme} />
+        <MiniStat label="ARV" value={rehab.afterRepairValue ? fmtK(rehab.afterRepairValue) : "Not applicable"} theme={theme} />
       </div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:12 }}>
-        <ListBlock title="Included Scope" items={rehab.scopeItems} color="#64c878" />
-        <ListBlock title="Not Included" items={rehab.excludedItems} color="#e07060" />
+        <ListBlock title="Included Scope" items={rehab.scopeItems} color="#64c878" theme={theme} />
+        <ListBlock title="Not Included" items={rehab.excludedItems} color="#e07060" theme={theme} />
       </div>
-      {rehab.arvNote && <div style={{ marginTop:12, fontSize:11, color:"#4a4840", fontFamily:"sans-serif", fontStyle:"italic" }}>{rehab.arvNote}</div>}
+      {rehab.arvNote && <div style={{ marginTop:12, fontSize:11, color:ui.faint, fontFamily:"sans-serif", fontStyle:"italic" }}>{rehab.arvNote}</div>}
     </div>
   );
 }
 
-function MiniStat({ label, value }) {
+function MiniStat({ label, value, theme }) {
+  const ui = appTheme(theme);
   return (
-    <div style={{ background:"#0d0f14", border:"1px solid #1a1c22", borderRadius:10, padding:"11px 12px" }}>
-      <div style={{ fontSize:9, color:"#4a4840", fontFamily:"sans-serif", textTransform:"uppercase", letterSpacing:1, marginBottom:5 }}>{label}</div>
-      <div style={{ fontSize:13, color:"#f0e8d8", fontFamily:"sans-serif" }}>{value || "—"}</div>
+    <div style={{ background:ui.panelAlt, border:`1px solid ${ui.borderSoft}`, borderRadius:10, padding:"11px 12px" }}>
+      <div style={{ fontSize:9, color:ui.faint, fontFamily:"sans-serif", textTransform:"uppercase", letterSpacing:1, marginBottom:5 }}>{label}</div>
+      <div style={{ fontSize:13, color:ui.text, fontFamily:"sans-serif" }}>{value || "—"}</div>
     </div>
   );
 }
@@ -870,20 +902,21 @@ function ListBlock({ title, items = [], color }) {
   );
 }
 
-function PhotoGallery({ photos = [] }) {
+function PhotoGallery({ photos = [], theme }) {
   if (!photos.length) return null;
+  const ui = appTheme(theme);
   return (
-    <div style={{ background:"#13161d", border:"1px solid #222530", borderRadius:14, padding:"14px", marginBottom:14 }}>
+    <div style={{ background:ui.panel, border:`1px solid ${ui.border}`, borderRadius:14, padding:"14px", marginBottom:14 }}>
       <div className="photo-grid" style={{ display:"grid", gridTemplateColumns:photos.length > 1 ? "minmax(0,1.35fr) minmax(180px,.65fr)" : "1fr", gap:8 }}>
-        <div style={{ aspectRatio:"16/10", overflow:"hidden", borderRadius:10, background:"#0d0f14" }}>
+        <div style={{ aspectRatio:"16/10", overflow:"hidden", borderRadius:10, background:ui.panelAlt }}>
           <img src={photos[0]} alt="Property exterior" loading="lazy" referrerPolicy="no-referrer" style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }} />
         </div>
         {photos.length > 1 && <div style={{ display:"grid", gridTemplateColumns:"repeat(2,minmax(0,1fr))", gap:8 }}>
           {photos.slice(1, 5).map((photo, index) => (
-            <div key={photo} style={{ aspectRatio:"1/1", overflow:"hidden", borderRadius:9, background:"#0d0f14", position:"relative" }}>
+            <div key={photo} style={{ aspectRatio:"1/1", overflow:"hidden", borderRadius:9, background:ui.panelAlt, position:"relative" }}>
               <img src={photo} alt={`Property photo ${index + 2}`} loading="lazy" referrerPolicy="no-referrer" style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }} />
               {index === 3 && photos.length > 5 && (
-                <div style={{ position:"absolute", inset:0, background:"rgba(12,14,19,.62)", display:"flex", alignItems:"center", justifyContent:"center", color:"#f0e8d8", fontFamily:"sans-serif", fontSize:13, fontWeight:"bold" }}>
+                <div style={{ position:"absolute", inset:0, background:"rgba(12,14,19,.62)", display:"flex", alignItems:"center", justifyContent:"center", color:ui.text, fontFamily:"sans-serif", fontSize:13, fontWeight:"bold" }}>
                   +{photos.length - 5}
                 </div>
               )}
@@ -1031,15 +1064,16 @@ function PipelinePanel({ value, onChange, theme }) {
   );
 }
 
-function ConfidenceCard({ confidence }) {
+function ConfidenceCard({ confidence, theme }) {
   if (!confidence) return null;
+  const ui = appTheme(theme);
   const tone = confidence.score >= 75 ? "green" : confidence.score >= 50 ? "gold" : "red";
   return (
-    <div style={{ background:"#13161d", border:"1px solid #222530", borderRadius:14, padding:"18px 20px", marginBottom:14 }}>
-      <SectionLabel>Comp Confidence</SectionLabel>
+    <div style={{ background:ui.panel, border:`1px solid ${ui.border}`, borderRadius:14, padding:"18px 20px", marginBottom:14 }}>
+      <SectionLabel theme={theme}>Comp Confidence</SectionLabel>
       <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
         <Badge tone={tone}>{confidence.score}/100</Badge>
-        <div style={{ color:"#d0c8b8", fontSize:12, fontFamily:"sans-serif" }}>Data quality score for this valuation.</div>
+        <div style={{ color:ui.muted, fontSize:12, fontFamily:"sans-serif" }}>Data quality score for this valuation.</div>
       </div>
       {(confidence.reasons || []).slice(0, 4).map((reason, i) => <BulletLine key={i} text={reason} color="#c9a84c" icon="-" small />)}
     </div>
@@ -1062,10 +1096,10 @@ function DealCalculator({ deal, setDeal, report, theme, onSave }) {
         <input value={deal.arv} onChange={(e)=>update("arv", e.target.value)} placeholder="ARV override" style={field} />
       </div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))", gap:8 }}>
-        <MiniStat label="Total Cost" value={fmtK(metrics.totalCost)} />
-        <MiniStat label="Projected Profit" value={fmtK(metrics.profit)} />
-        <MiniStat label="ROI" value={metrics.roi == null ? "-" : `${metrics.roi}%`} />
-        <MiniStat label="Max Offer" value={fmtK(metrics.maxAllowableOffer)} />
+        <MiniStat label="Total Cost" value={fmtK(metrics.totalCost)} theme={theme} />
+        <MiniStat label="Projected Profit" value={fmtK(metrics.profit)} theme={theme} />
+        <MiniStat label="ROI" value={metrics.roi == null ? "-" : `${metrics.roi}%`} theme={theme} />
+        <MiniStat label="Max Offer" value={fmtK(metrics.maxAllowableOffer)} theme={theme} />
       </div>
       <div style={{ display:"flex", justifyContent:"flex-end", marginTop:12 }}>
         <button type="button" onClick={() => onSave?.("Deal saved.")} style={hdrBtn}>Save deal</button>
@@ -1171,7 +1205,8 @@ function SettingsModal({ onClose, user, theme, setTheme, onSignOut }) {
 }
 
 // ── History Panel ─────────────────────────────────────────────────────────────
-function HistoryPanel({ onClose, onLoad, user }) {
+function HistoryPanel({ onClose, onLoad, user, theme }) {
+  const ui = appTheme(theme);
   const [items, setItems] = useState([]);
   useEffect(() => { loadItems(); }, []);
   async function loadItems() {
@@ -1216,15 +1251,15 @@ function HistoryPanel({ onClose, onLoad, user }) {
   }
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.65)", zIndex:100, display:"flex", justifyContent:"flex-end" }} onClick={onClose}>
-      <div style={{ width:"min(100vw,380px)", background:"#0d0f14", borderLeft:"1px solid #1e2028", height:"100%", overflowY:"auto", padding:24, boxSizing:"border-box" }} onClick={e=>e.stopPropagation()}>
+      <div style={{ width:"min(100vw,380px)", background:ui.panelAlt, borderLeft:`1px solid ${ui.border}`, height:"100%", overflowY:"auto", padding:24, boxSizing:"border-box" }} onClick={e=>e.stopPropagation()}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
-          <div style={{ fontSize:15, color:"#f0e8d8" }}>Search History</div>
-          <button onClick={onClose} style={{ background:"none", border:"none", color:"#5a5850", cursor:"pointer", fontSize:18 }}>✕</button>
+          <div style={{ fontSize:15, color:ui.text }}>Search History</div>
+          <button onClick={onClose} style={{ background:"none", border:"none", color:ui.faint, cursor:"pointer", fontSize:18 }}>✕</button>
         </div>
         {!items.length ? (
           <div style={{ textAlign:"center", color:"#3a3830", fontFamily:"sans-serif", fontSize:13, padding:"40px 0" }}>No saved searches yet</div>
         ) : items.map((it,i) => (
-          <div key={i} style={{ background:"#13161d", border:"1px solid #1e2028", borderRadius:12, padding:"14px 16px", marginBottom:10, cursor:"pointer" }} onClick={() => { onLoad(it); onClose(); }}>
+          <div key={i} style={{ background:ui.panel, border:`1px solid ${ui.border}`, borderRadius:12, padding:"14px 16px", marginBottom:10, cursor:"pointer" }} onClick={() => { onLoad(it); onClose(); }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
               <div style={{ fontSize:13, color:"#d0c8b8", fontFamily:"sans-serif", flex:1, paddingRight:8 }}>{it.address}</div>
               <button onClick={e=>{ e.stopPropagation(); remove(it.id); }} style={{ background:"none", border:"none", color:"#3a3830", cursor:"pointer", fontSize:14, flexShrink:0 }}>✕</button>
@@ -1272,6 +1307,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
   const [showHistory, setShowHistory] = useState(false);
   const userPlan = String(user?.user_metadata?.plan || user?.app_metadata?.plan || "free").toLowerCase();
   const isPremium = userPlan === "premium";
+  const ui = appTheme(theme);
 
   useEffect(() => {
     if (!supabase || !user?.id) return;
@@ -1540,7 +1576,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
   const zDelta = Z?.value && V?.mid ? Math.round(((V.mid - Z.value)/Z.value)*100*10)/10 : null;
 
   return (
-    <div style={{ minHeight:"100vh", background:theme==="light"?"#fbf8f2":"radial-gradient(circle at top right, #161a22, #0c0e13)", color:theme==="light"?"#201b14":"#e8e0d0", fontFamily:"'Inter', sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:ui.pageGradient, color:ui.text, fontFamily:"'Inter', sans-serif" }}>
       <style>{`
         @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
         @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:.4} }
@@ -1565,17 +1601,17 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
       `}</style>
 
       {/* ── Header ── */}
-      <div className="app-header" style={{ borderBottom:theme==="light"?"1px solid #e2ddd5":"1px solid rgba(255,255,255,0.06)", padding:"18px 24px", display:"flex", alignItems:"center", justifyContent:"space-between", background:theme==="light"?"#ffffff":"rgba(12,14,19,0.8)", backdropFilter:"blur(12px)", position:"sticky", top:0, zIndex:100 }}>
+      <div className="app-header" style={{ borderBottom:`1px solid ${ui.border}`, padding:"18px 24px", display:"flex", alignItems:"center", justifyContent:"space-between", background:ui.headerBg, backdropFilter:"blur(12px)", position:"sticky", top:0, zIndex:100 }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <div style={{ width:36, height:36, background:"linear-gradient(135deg,#c9a84c,#e8c97a)", borderRadius:9, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, boxShadow:"0 4px 16px rgba(201,168,76,.25)" }}>🏛</div>
           <div>
-            <div style={{ fontSize:17, color:theme==="light"?"#201b14":"#f0e8d8", letterSpacing:.3, fontWeight:700, fontFamily:"'Plus Jakarta Sans', sans-serif" }}>PropVal</div>
-            <div style={{ fontSize:9, color:"#8a8174", letterSpacing:"2px", textTransform:"uppercase", fontFamily:"'Inter', sans-serif", fontWeight:600 }}>AI Property Valuation</div>
+            <div style={{ fontSize:17, color:ui.text, letterSpacing:.3, fontWeight:700, fontFamily:"'Plus Jakarta Sans', sans-serif" }}>PropVal</div>
+            <div style={{ fontSize:9, color:ui.sub, letterSpacing:"2px", textTransform:"uppercase", fontFamily:"'Inter', sans-serif", fontWeight:600 }}>AI Property Valuation</div>
           </div>
         </div>
         <div className="app-header-actions" style={{ display:"flex", gap:8, alignItems:"center" }}>
           {/* API key status */}
-          <div style={{ display:"flex", alignItems:"center", gap:6, background:"#13161d", border:"1px solid #1e2028", borderRadius:8, padding:"5px 10px" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:6, background:ui.panel, border:`1px solid ${ui.border}`, borderRadius:8, padding:"5px 10px" }}>
             <div style={{ width:7, height:7, borderRadius:"50%", background:apiKey?"#64c878":"#e07060", boxShadow:`0 0 6px ${apiKey?"#64c878":"#e07060"}80` }}/>
             <span style={{ fontSize:10, color:apiKey?"#64c878":"#e07060", fontFamily:"sans-serif" }}>{apiKey?"Data Connected":"No API Key"}</span>
           </div>
@@ -1595,26 +1631,26 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
 
         {/* ── Hero text ── */}
         <div style={{ textAlign:"center", marginBottom:28 }}>
-          <h1 style={{ fontSize:"clamp(34px,6vw,58px)", fontWeight:800, margin:"0 0 12px", color:theme==="light"?"#111":"#f8f0df", lineHeight:1.02, fontFamily:"'Plus Jakarta Sans', sans-serif" }}>Enter any property address</h1>
-          <p style={{ margin:"0 auto", maxWidth:660, fontSize:16, color:theme==="light"?"#555":"#a09888", fontFamily:"'Inter', sans-serif", lineHeight:1.65, fontWeight:500 }}>
+          <h1 style={{ fontSize:"clamp(34px,6vw,58px)", fontWeight:800, margin:"0 0 12px", color:ui.heading, lineHeight:1.02, fontFamily:"'Plus Jakarta Sans', sans-serif" }}>Enter any property address</h1>
+          <p style={{ margin:"0 auto", maxWidth:660, fontSize:16, color:ui.muted, fontFamily:"'Inter', sans-serif", lineHeight:1.65, fontWeight:500 }}>
             Turn any address into a polished valuation lead report with live property data, AI analysis, and saved client history.
           </p>
         </div>
 
         {/* ── Search bar ── */}
-        <div className="search-row" style={{ display:"flex", gap:12, marginBottom:16, background:theme==="light"?"#fff":"rgba(255,255,255,0.03)", border:theme==="light"?"1px solid #e2ddd5":"1px solid rgba(255,255,255,0.08)", borderRadius:16, padding:8, boxShadow:theme==="light"?"0 18px 50px rgba(0,0,0,.05)":"0 18px 50px rgba(0,0,0,.22)", backdropFilter:"blur(12px)" }}>
+        <div className="search-row" style={{ display:"flex", gap:12, marginBottom:16, background:ui.panel, border:`1px solid ${ui.border}`, borderRadius:16, padding:8, boxShadow:ui.shadow, backdropFilter:"blur(12px)" }}>
           <input
             value={query}
             onChange={e=>setQuery(e.target.value)}
             onKeyDown={e=>e.key==="Enter"&&analyze()}
             placeholder="e.g. 4217 Oak Trail Dr, Austin, TX 78745"
-            style={{ flex:1, background:"transparent", border:"none", padding:"18px 20px", color:theme==="light"?"#111":"#f8f0df", fontSize:17, fontFamily:"'Inter', sans-serif", fontWeight:500, outline:"none" }}
+            style={{ flex:1, background:"transparent", border:"none", padding:"18px 20px", color:ui.heading, fontSize:17, fontFamily:"'Inter', sans-serif", fontWeight:500, outline:"none" }}
           />
           <button onClick={analyze} disabled={loading||!query.trim()} style={{
             padding:"18px 28px", borderRadius:12, border:"none",
             cursor:loading||!query.trim()?"not-allowed":"pointer",
-            background:loading||!query.trim()?(theme==="light"?"#f0e8d8":"rgba(255,255,255,0.05)"):"linear-gradient(135deg,#c9a84c,#e8c97a)",
-            color:loading||!query.trim()?(theme==="light"?"#aaa":"#5a5850"):"#0c0e13",
+            background:loading||!query.trim()?ui.panelAlt:"linear-gradient(135deg,#c9a84c,#e8c97a)",
+            color:loading||!query.trim()?ui.faint:ui.darkOnGold,
             fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:700, fontSize:15, letterSpacing:"0.5px", transition:"all .2s", whiteSpace:"nowrap",
             boxShadow:!loading&&query.trim()?"0 4px 14px rgba(201,168,76,.3)":"none"
           }}>
@@ -1631,13 +1667,13 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
 
         {/* ── Loading ── */}
         {loading && (
-          <div style={{ background:"#13161d", border:"1px solid #1e2028", borderRadius:12, padding:"20px 24px", marginBottom:20, animation:"fadeUp .3s ease" }}>
+          <div style={{ background:ui.panel, border:`1px solid ${ui.border}`, borderRadius:12, padding:"20px 24px", marginBottom:20, animation:"fadeUp .3s ease" }}>
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14 }}>
               <div style={{ width:18, height:18, border:"2px solid #c9a84c", borderTop:"2px solid transparent", borderRadius:"50%", animation:"spin 1s linear infinite", flexShrink:0 }}/>
-              <div style={{ fontSize:13, color:"#9a9080", fontFamily:"sans-serif", animation:"pulse 2s infinite" }}>{STEPS[step]?.label}</div>
+              <div style={{ fontSize:13, color:ui.muted, fontFamily:"sans-serif", animation:"pulse 2s infinite" }}>{STEPS[step]?.label}</div>
             </div>
             <div style={{ display:"flex", gap:4 }}>
-              {STEPS.map((_,i) => <div key={i} style={{ flex:1, height:3, borderRadius:2, background:i<=step?"#c9a84c":"#1e2028", transition:"background .4s" }}/>)}
+              {STEPS.map((_,i) => <div key={i} style={{ flex:1, height:3, borderRadius:2, background:i<=step?"#c9a84c":ui.borderSoft, transition:"background .4s" }}/>)}
             </div>
           </div>
         )}
@@ -1649,7 +1685,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
         )}
 
         {/* ── Results ── */}
-        <div className="print-hide" style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:10, marginBottom:14, color:"#c0b8a8", fontFamily:"sans-serif", fontSize:13, fontWeight:700 }}>
+        <div className="print-hide" style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:10, marginBottom:14, color:ui.muted, fontFamily:"sans-serif", fontSize:13, fontWeight:700 }}>
           <span>{isPremium ? "Premium plan: unlimited searches" : `Free plan searches this month: ${monthlySearches}/${FREE_SEARCH_LIMIT}`}</span>
         </div>
 
@@ -1659,7 +1695,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
 
             {/* ①  Valuation Hero */}
             {Z?.value && (
-              <div style={{ background:"linear-gradient(135deg,#13161d,#15130a)", border:"1px solid rgba(201,168,76,.3)", borderRadius:16, padding:"24px 26px", marginBottom:14 }}>
+              <div style={{ background:theme === "light" ? "#ffffff" : "linear-gradient(135deg,#13161d,#15130a)", border:"1px solid rgba(201,168,76,.3)", borderRadius:16, padding:"24px 26px", marginBottom:14, boxShadow:theme === "light" ? ui.shadow : "none" }}>
                 <div className="hero-card-row" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
                   <div>
                     <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:"#c9a84c", fontFamily:"sans-serif", marginBottom:4 }}>
@@ -1667,7 +1703,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
                     </div>
                     <div className="valuation-amount" style={{ fontSize:40, color:"#e8c97a", lineHeight:1 }}>{fmtK(Z.value)}</div>
                     {Z.rentEstimate && (
-                      <div style={{ fontSize:13, color:"#7a7060", fontFamily:"sans-serif", marginTop:5 }}>
+                      <div style={{ fontSize:13, color:ui.sub, fontFamily:"sans-serif", marginTop:5 }}>
                         Rental signal: <span style={{ color:"#c9a84c" }}>{fmtK(Z.rentEstimate)}/mo</span>
                       </div>
                     )}
@@ -1675,25 +1711,25 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
                   <div style={{ textAlign:"right" }}>
                     {/* Estimate vs CMA */}
                     {V?.mid && (
-                      <div style={{ background:"#0d0f14", border:"1px solid #2a2820", borderRadius:10, padding:"10px 14px" }}>
-                        <div style={{ fontSize:9, color:"#5a5850", fontFamily:"sans-serif", textTransform:"uppercase", letterSpacing:1, marginBottom:4 }}>Our CMA</div>
-                        <div style={{ fontSize:20, color:"#f0e8d8", fontFamily:"sans-serif" }}>{fmtK(V.mid)}</div>
-                        <div style={{ fontSize:11, fontFamily:"sans-serif", color:zDelta===0?"#7a7060":zDelta>0?"#64c878":"#e07060", marginTop:3 }}>
+                      <div style={{ background:ui.panelAlt, border:`1px solid ${ui.borderSoft}`, borderRadius:10, padding:"10px 14px" }}>
+                        <div style={{ fontSize:9, color:ui.faint, fontFamily:"sans-serif", textTransform:"uppercase", letterSpacing:1, marginBottom:4 }}>Our CMA</div>
+                        <div style={{ fontSize:20, color:ui.text, fontFamily:"sans-serif" }}>{fmtK(V.mid)}</div>
+                        <div style={{ fontSize:11, fontFamily:"sans-serif", color:zDelta===0?ui.sub:zDelta>0?"#2f8f4e":"#c84636", marginTop:3 }}>
                           {zDelta!=null ? `${zDelta>0?"+":""}${zDelta}% vs baseline` : ""}
                         </div>
                       </div>
                     )}
                   </div>
                 </div>
-                <ValuationMeter value={Z.value} low={Z.low} high={Z.high} />
-                {Z.note && <div style={{ fontSize:10, color:"#4a4840", fontFamily:"sans-serif", marginTop:10, fontStyle:"italic" }}>{Z.note}</div>}
-                <div style={{ fontSize:9, color:"#2a2820", fontFamily:"sans-serif", marginTop:6 }}>Automated estimates are directional and should be reviewed by a licensed professional.</div>
+                <ValuationMeter value={Z.value} low={Z.low} high={Z.high} theme={theme} />
+                {Z.note && <div style={{ fontSize:10, color:ui.faint, fontFamily:"sans-serif", marginTop:10, fontStyle:"italic" }}>{Z.note}</div>}
+                <div style={{ fontSize:9, color:ui.faint, fontFamily:"sans-serif", marginTop:6 }}>Automated estimates are directional and should be reviewed by a licensed professional.</div>
               </div>
             )}
 
-            <RehabSelector value={rehabStyle} onChange={updateRehabStyle} />
-            <RehabSummary rehab={H} />
-            <PhotoGallery photos={propertyPhotos} />
+            <RehabSelector value={rehabStyle} onChange={updateRehabStyle} theme={theme} />
+            <RehabSummary rehab={H} theme={theme} />
+            <PhotoGallery photos={propertyPhotos} theme={theme} />
             <ResultsMenu active={activeResultTool} setActive={setActiveResultTool} theme={theme} />
             {activeResultTool === "lead" && (
               <>
@@ -1702,31 +1738,31 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
               </>
             )}
             {activeResultTool === "deal" && <DealCalculator deal={deal} setDeal={setDeal} report={R} theme={theme} onSave={() => saveCurrentReport("Deal metrics saved.")} />}
-            {activeResultTool === "confidence" && <ConfidenceCard confidence={R.meta?.compConfidence || compConfidence(R)} />}
+            {activeResultTool === "confidence" && <ConfidenceCard confidence={R.meta?.compConfidence || compConfidence(R)} theme={theme} />}
             {activeResultTool === "actions" && <ReportActions reportId={lastSavedReportId} onShare={copyShareLink} onSave={saveCurrentReport} onRerun={rerunAiAnalysis} rerunning={rerunningAnalysis} />}
 
             {/* ②  Property Card */}
-            <div style={{ background:"#13161d", border:"1px solid #222530", borderRadius:14, padding:"22px 24px", marginBottom:14 }}>
+            <div style={{ background:ui.panel, border:`1px solid ${ui.border}`, borderRadius:14, padding:"22px 24px", marginBottom:14 }}>
               <div className="property-title-row" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
                 <div>
-                  <div style={{ fontSize:17, color:"#f0e8d8", marginBottom:4 }}>{P?.address}</div>
-                  <div style={{ fontSize:12, color:"#4a4840", fontFamily:"sans-serif" }}>
+                  <div style={{ fontSize:17, color:ui.text, marginBottom:4 }}>{P?.address}</div>
+                  <div style={{ fontSize:12, color:ui.faint, fontFamily:"sans-serif" }}>
                     {P?.neighborhood && `${P.neighborhood} · `}{P?.city}, {P?.state} {P?.zip}
                   </div>
                 </div>
                 <Badge tone="gold">{P?.type || "Residential"}</Badge>
               </div>
 
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))", background:"#0d0f14", borderRadius:10, overflow:"hidden", border:"1px solid #1a1c22", marginBottom:12 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))", background:ui.panelAlt, borderRadius:10, overflow:"hidden", border:`1px solid ${ui.borderSoft}`, marginBottom:12 }}>
                 {[
                   { l:"Beds",      v: P?.beds      ?? "—" },
                   { l:"Baths",     v: P?.baths     ?? "—" },
                   { l:"Sq Ft",     v: P?.sqft      ? Number(P.sqft).toLocaleString() : "—" },
                   { l:"Year Built",v: P?.yearBuilt  ?? "—" },
                 ].map(({l,v},i) => (
-                  <div key={i} style={{ padding:"14px 0", borderRight:i<3?"1px solid #1a1c22":"none", textAlign:"center" }}>
-                    <div style={{ fontSize:20, color:"#f0e8d8", marginBottom:3 }}>{v}</div>
-                    <div style={{ fontSize:9, color:"#4a4840", fontFamily:"sans-serif", textTransform:"uppercase", letterSpacing:1 }}>{l}</div>
+                  <div key={i} style={{ padding:"14px 0", borderRight:i<3?`1px solid ${ui.borderSoft}`:"none", textAlign:"center" }}>
+                    <div style={{ fontSize:20, color:ui.text, marginBottom:3 }}>{v}</div>
+                    <div style={{ fontSize:9, color:ui.faint, fontFamily:"sans-serif", textTransform:"uppercase", letterSpacing:1 }}>{l}</div>
                   </div>
                 ))}
               </div>
@@ -1739,33 +1775,33 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
                 {zillowRaw?.zpid && <Badge tone="blue">ref: {zillowRaw.zpid}</Badge>}
               </div>
 
-              {P?.description && <div style={{ marginTop:12, fontSize:12, color:"#6a6258", fontFamily:"sans-serif", lineHeight:1.6, fontStyle:"italic", borderTop:"1px solid #1a1c22", paddingTop:12 }}>{P.description}</div>}
+              {P?.description && <div style={{ marginTop:12, fontSize:12, color:ui.sub, fontFamily:"sans-serif", lineHeight:1.6, fontStyle:"italic", borderTop:`1px solid ${ui.borderSoft}`, paddingTop:12 }}>{P.description}</div>}
             </div>
 
             {/* ③  Price & Tax History */}
             {(R.priceHistory?.length > 0 || P?.lastSalePrice) && (
-              <div style={{ background:"#13161d", border:"1px solid #222530", borderRadius:14, padding:"22px 24px", marginBottom:14 }}>
-                <SectionLabel>Price & Tax History</SectionLabel>
+              <div style={{ background:ui.panel, border:`1px solid ${ui.border}`, borderRadius:14, padding:"22px 24px", marginBottom:14 }}>
+                <SectionLabel theme={theme}>Price & Tax History</SectionLabel>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:10, marginBottom:R.priceHistory?.length?18:0 }}>
                   {[
                     { l:"Last Sale",    v:fmtK(P?.lastSalePrice), s:P?.lastSaleDate },
                     { l:"Tax Assessed", v:fmtK(P?.taxAssessedValue), s:"Current assessed" },
                     { l:"List Price",   v:P?.listPrice ? fmtK(P.listPrice) : "Off Market", s:P?.daysOnMarket?`${P.daysOnMarket} days on market`:null },
                   ].map(({l,v,s}) => (
-                    <div key={l} style={{ background:"#0d0f14", borderRadius:10, padding:"13px 14px", border:"1px solid #1a1c22" }}>
-                      <div style={{ fontSize:9, color:"#4a4840", fontFamily:"sans-serif", textTransform:"uppercase", letterSpacing:1, marginBottom:5 }}>{l}</div>
-                      <div style={{ fontSize:18, color:"#f0e8d8" }}>{v}</div>
-                      {s && <div style={{ fontSize:10, color:"#4a4840", fontFamily:"sans-serif", marginTop:3 }}>{s}</div>}
+                    <div key={l} style={{ background:ui.panelAlt, borderRadius:10, padding:"13px 14px", border:`1px solid ${ui.borderSoft}` }}>
+                      <div style={{ fontSize:9, color:ui.faint, fontFamily:"sans-serif", textTransform:"uppercase", letterSpacing:1, marginBottom:5 }}>{l}</div>
+                      <div style={{ fontSize:18, color:ui.text }}>{v}</div>
+                      {s && <div style={{ fontSize:10, color:ui.faint, fontFamily:"sans-serif", marginTop:3 }}>{s}</div>}
                     </div>
                   ))}
                 </div>
-                {R.priceHistory?.length > 0 && <PriceTimeline history={R.priceHistory} />}
+                {R.priceHistory?.length > 0 && <PriceTimeline history={R.priceHistory} theme={theme} />}
               </div>
             )}
 
             {/* ④  Market Context */}
-            <div style={{ background:"#13161d", border:"1px solid #222530", borderRadius:14, padding:"22px 24px", marginBottom:14 }}>
-              <SectionLabel>Local Market Context</SectionLabel>
+            <div style={{ background:ui.panel, border:`1px solid ${ui.border}`, borderRadius:14, padding:"22px 24px", marginBottom:14 }}>
+              <SectionLabel theme={theme}>Local Market Context</SectionLabel>
               <Row label="Median Sale Price" value={fmtK(M?.medianSalePrice)} />
               <Row label="Median $/sqft" value={M?.medianPricePerSqft ? `$${M.medianPricePerSqft}` : "—"} />
               <Row label="Avg Days on Market" value={M?.avgDaysOnMarket ? `${M.avgDaysOnMarket} days` : "—"} />
@@ -1879,7 +1915,7 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
                 </div>
                 <div>
                   <div style={{ fontSize:9, color:"#4a4840", fontFamily:"sans-serif", textTransform:"uppercase", letterSpacing:1, marginBottom:4 }}>Verdict</div>
-                  <div style={{ fontSize:15, color:"#f0e8d8", overflowWrap:"anywhere", wordBreak:"break-word" }}>{A.verdict}</div>
+                  <div style={{ fontSize:15, color:ui.text, overflowWrap:"anywhere", wordBreak:"break-word" }}>{A.verdict}</div>
                 </div>
               </div>
             )}
@@ -1914,16 +1950,19 @@ export default function App({ user, theme = "dark", setTheme = () => {}, onSignO
 
       {/* Modals */}
       {showSettings && <SettingsModal onClose={()=>setShowSettings(false)} user={user} theme={theme} setTheme={setTheme} onSignOut={onSignOut} />}
-      {showHistory  && <HistoryPanel  onClose={()=>setShowHistory(false)}  onLoad={loadFromHistory} user={user} />}
+      {showHistory  && <HistoryPanel  onClose={()=>setShowHistory(false)}  onLoad={loadFromHistory} user={user} theme={theme} />}
       <ToastContainer />
     </div>
   );
 }
 
 // ── Micro-components ──────────────────────────────────────────────────────────
-const hdrBtn = { background:"#171b24", border:"1px solid #303541", borderRadius:8, padding:"6px 12px", cursor:"pointer", color:"#d0c8b8", fontSize:11, fontFamily:"sans-serif" };
+const hdrBtn = { background:"#fffaf0", border:"1px solid #d8cebd", borderRadius:8, padding:"6px 12px", cursor:"pointer", color:"#7a5718", fontSize:11, fontFamily:"sans-serif", fontWeight:700 };
 const miniInput = { width:"100%", boxSizing:"border-box", background:"#171b24", border:"1px solid #3a4050", borderRadius:8, padding:"10px 11px", color:"#f8f0df", fontFamily:"sans-serif", fontSize:13, outline:"none" };
-const SectionLabel = ({children}) => <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:"#7a7060", fontFamily:"sans-serif", marginBottom:12, paddingBottom:8, borderBottom:"1px solid #1e2028" }}>{children}</div>;
+const SectionLabel = ({children, theme}) => {
+  const ui = appTheme(theme);
+  return <div style={{ fontSize:10, letterSpacing:"2px", textTransform:"uppercase", color:ui.sub, fontFamily:"sans-serif", marginBottom:12, paddingBottom:8, borderBottom:`1px solid ${ui.borderSoft}` }}>{children}</div>;
+};
 const BulletLine = ({text,color,icon,small}) => (
   <div style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:6 }}>
     <span style={{ color, marginTop:1, fontSize:small?9:11, flexShrink:0 }}>{icon}</span>

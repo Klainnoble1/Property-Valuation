@@ -158,7 +158,7 @@ export default function SaaSApp() {
       ) : view === "billing" ? (
         <BillingPage session={session} theme={theme} plan={plan} />
       ) : (
-        <div style={theme === "light" ? lightModeAppStyle : undefined}>
+        <div>
           <App user={session.user} theme={theme} setTheme={setTheme} onSignOut={() => supabase.auth.signOut()} />
         </div>
       )}
@@ -406,12 +406,6 @@ function dateTime(value) {
   if (!value) return "—";
   return new Date(value).toLocaleString([], { month:"short", day:"numeric", hour:"numeric", minute:"2-digit" });
 }
-
-const lightModeAppStyle = {
-  filter: "invert(1) hue-rotate(180deg)",
-  background: "#f4f0e8",
-  minHeight: "100vh",
-};
 
 const responsiveShellCss = `
   @media (max-width: 720px) {
